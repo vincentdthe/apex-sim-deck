@@ -1,0 +1,12 @@
+# Dependencies
+node_modules/
+
+# Production build outputs
+dist/
+dist_app/
+release/
+
+# Logs & OS files
+*.log
+.DS_Store
+Thumbs.db
