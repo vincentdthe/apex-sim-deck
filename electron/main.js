@@ -11,7 +11,7 @@ const __dirname = path.dirname(__filename);
 let mainWindow;
 
 function createWindow() {
-  const preloadPath = path.join(__dirname, 'preload.js');
+  const preloadPath = path.join(__dirname, 'preload.cjs');
 
   mainWindow = new BrowserWindow({
     width: 1280,
@@ -154,7 +154,6 @@ ipcMain.handle('launch:runProfile', async (event, payload) => {
 
     // 2. Launch Main Game Executable (if configured)
     if (!gameExe) {
-      // Main game auto-launch skipped or path not set
       if (companionApps.length > 0) {
         sendStatus(companionApps.length, 'completed', `Background companion app sequence finished.`);
       }
