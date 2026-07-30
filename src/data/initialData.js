@@ -76,8 +76,8 @@ export const INITIAL_APPS = [
   },
   {
     id: 'app-meta-horizon',
-    name: 'Meta Horizon App (Oculus Link)',
-    exePath: 'C:\\Program Files\\Oculus\\Support\\oculus-runtime\\OVRServer_x64.exe',
+    name: 'Meta Horizon App (Link)',
+    exePath: 'C:\\Program Files\\Meta Horizon\\Support\\oculus-runtime\\OVRServer_x64.exe',
     args: '',
     delay: 0,
     autoKill: false,
@@ -86,7 +86,7 @@ export const INITIAL_APPS = [
   {
     id: 'app-meta-debug-tool',
     name: 'Meta Horizon Debug Tool (ODT)',
-    exePath: 'C:\\Program Files\\Oculus\\Support\\oculus-diagnostics\\OculusDebugTool.exe',
+    exePath: 'C:\\Program Files\\Meta Horizon\\Support\\oculus-diagnostics\\OculusDebugTool.exe',
     args: '',
     delay: 1,
     autoKill: false,

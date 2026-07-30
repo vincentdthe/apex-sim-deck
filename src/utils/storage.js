@@ -1,8 +1,8 @@
 import { INITIAL_APPS, INITIAL_GAMES } from '../data/initialData';
 
 // Versioned storage keys so preset updates auto-apply to existing users
-const APPS_KEY = 'apex_sim_deck_apps_v5';
-const GAMES_KEY = 'apex_sim_deck_games_v5';
+const APPS_KEY = 'apex_sim_deck_apps_v6';
+const GAMES_KEY = 'apex_sim_deck_games_v6';
 
 export function loadApps() {
   try {
@@ -30,6 +30,7 @@ export function loadGames() {
     return JSON.parse(raw);
   } catch (e) {
     console.error('Failed to load games from localStorage:', e);
+    return INITIAL_GAMES;
   }
 }
 
