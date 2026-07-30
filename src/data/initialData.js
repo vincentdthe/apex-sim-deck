@@ -55,10 +55,10 @@ export const INITIAL_APPS = [
     categories: { racing: true, flight: false }
   },
 
-  // --- SHARED / HARDWARE APPS ---
+  // --- HARDWARE & SHARED APPS ---
   {
-    id: 'app-moza-flight',
-    name: 'Moza Flight Software / Pit House',
+    id: 'app-moza-cockpit',
+    name: 'Moza Cockpit / Pit House',
     exePath: 'C:\\Program Files\\MOZA Pit House\\MOZAPitHouse.exe',
     args: '-minimized',
     delay: 0,
@@ -75,7 +75,7 @@ export const INITIAL_APPS = [
     categories: { racing: true, flight: true }
   },
 
-  // --- FLIGHT SIM SPECIFIC APPS ---
+  // --- FLIGHT SIM APPS ---
   {
     id: 'app-srs',
     name: 'DCS Simple Radio Standalone (SRS)',
@@ -147,6 +147,7 @@ export const INITIAL_GAMES = [
         isVr: true,
         exePath: 'C:\\Program Files (x86)\\iRacing\\ui\\iRacingSim64DX11.exe',
         args: '-vr -openxr',
+        autoLaunchGame: true,
         enabledAppIds: ['app-fanatec', 'app-track-titan', 'app-garage61', 'app-bloops', 'app-crewchief'],
         appOverrides: {
           'app-crewchief': { args: '-iracing' }
@@ -158,6 +159,7 @@ export const INITIAL_GAMES = [
         isVr: false,
         exePath: 'C:\\Program Files (x86)\\iRacing\\ui\\iRacingSim64DX11.exe',
         args: '-dx11',
+        autoLaunchGame: true,
         enabledAppIds: ['app-fanatec', 'app-track-titan', 'app-garage61', 'app-crewchief', 'app-trackir'],
         appOverrides: {}
       }
@@ -176,6 +178,7 @@ export const INITIAL_GAMES = [
         isVr: true,
         exePath: 'C:\\Program Files (x86)\\Steam\\steamapps\\common\\Le Mans Ultimate\\Le Mans Ultimate.exe',
         args: '-vr',
+        autoLaunchGame: true,
         enabledAppIds: ['app-fanatec', 'app-track-titan', 'app-crewchief'],
         appOverrides: {
           'app-crewchief': { args: '-rf2' }
@@ -187,6 +190,7 @@ export const INITIAL_GAMES = [
         isVr: false,
         exePath: 'C:\\Program Files (x86)\\Steam\\steamapps\\common\\Le Mans Ultimate\\Le Mans Ultimate.exe',
         args: '',
+        autoLaunchGame: true,
         enabledAppIds: ['app-fanatec', 'app-track-titan', 'app-crewchief', 'app-trackir'],
         appOverrides: {}
       }
@@ -207,8 +211,9 @@ export const INITIAL_GAMES = [
         isVr: true,
         exePath: 'C:\\Program Files\\Eagle Dynamics\\DCS World OpenBeta\\bin\\DCS.exe',
         args: '--force_enable_VR',
-        // Moza Flight, SRS, Voice Attack, Simshaker for Aviators, Openkneeboard (TrackIR disabled in VR)
-        enabledAppIds: ['app-moza-flight', 'app-srs', 'app-voice-attack', 'app-simshaker-aviators', 'app-openkneeboard'],
+        autoLaunchGame: true,
+        // Moza Cockpit, SRS, VoiceAttack, SimShaker for Aviators, OpenKneeboard (TrackIR disabled in VR)
+        enabledAppIds: ['app-moza-cockpit', 'app-srs', 'app-voice-attack', 'app-simshaker-aviators', 'app-openkneeboard'],
         appOverrides: {}
       },
       {
@@ -217,8 +222,9 @@ export const INITIAL_GAMES = [
         isVr: false,
         exePath: 'C:\\Program Files\\Eagle Dynamics\\DCS World OpenBeta\\bin\\DCS.exe',
         args: '--force_disable_VR',
-        // Moza Flight, TrackIR, SRS, Voice Attack, Simshaker for Aviators, Openkneeboard
-        enabledAppIds: ['app-moza-flight', 'app-trackir', 'app-srs', 'app-voice-attack', 'app-simshaker-aviators', 'app-openkneeboard'],
+        autoLaunchGame: true,
+        // Moza Cockpit, TrackIR, SRS, VoiceAttack, SimShaker for Aviators, OpenKneeboard
+        enabledAppIds: ['app-moza-cockpit', 'app-trackir', 'app-srs', 'app-voice-attack', 'app-simshaker-aviators', 'app-openkneeboard'],
         appOverrides: {}
       }
     ]
@@ -232,22 +238,24 @@ export const INITIAL_GAMES = [
     profiles: [
       {
         id: 'prof-bms-vr',
-        name: 'BMS VR Mode',
+        name: 'Falcon BMS VR Mode',
         isVr: true,
         exePath: 'C:\\Falcon BMS 4.37\\Launcher.exe',
         args: '-vr',
-        // Moza Flight, OpenKneeboard, FoxVox, Simshaker Wings (TrackIR disabled in VR)
-        enabledAppIds: ['app-moza-flight', 'app-openkneeboard', 'app-foxvox', 'app-simshaker-wings'],
+        autoLaunchGame: true,
+        // Moza Cockpit, OpenKneeboard, FoxVox, SimShaker Wings (TrackIR disabled in VR)
+        enabledAppIds: ['app-moza-cockpit', 'app-openkneeboard', 'app-foxvox', 'app-simshaker-wings'],
         appOverrides: {}
       },
       {
         id: 'prof-bms-2d',
-        name: 'BMS 2D Mode',
+        name: 'Falcon BMS 2D Mode',
         isVr: false,
         exePath: 'C:\\Falcon BMS 4.37\\Launcher.exe',
         args: '',
-        // Moza Flight, TrackIR, OpenKneeboard, FoxVox, Simshaker Wings
-        enabledAppIds: ['app-moza-flight', 'app-trackir', 'app-openkneeboard', 'app-foxvox', 'app-simshaker-wings'],
+        autoLaunchGame: true,
+        // Moza Cockpit, TrackIR, OpenKneeboard, FoxVox, SimShaker Wings
+        enabledAppIds: ['app-moza-cockpit', 'app-trackir', 'app-openkneeboard', 'app-foxvox', 'app-simshaker-wings'],
         appOverrides: {}
       }
     ]
