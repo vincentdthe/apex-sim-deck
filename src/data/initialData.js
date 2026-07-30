@@ -55,7 +55,7 @@ export const INITIAL_APPS = [
     categories: { racing: true, flight: false }
   },
 
-  // --- FLIGHT APPS (Moza AB9 Flight Gear) ---
+  // --- HARDWARE, VR & SYSTEM UTILITIES ---
   {
     id: 'app-moza-cockpit',
     name: 'Moza Cockpit (AB9 Flight Base)',
@@ -74,6 +74,44 @@ export const INITIAL_APPS = [
     autoKill: true,
     categories: { racing: true, flight: true }
   },
+  {
+    id: 'app-meta-horizon',
+    name: 'Meta Horizon App (Oculus Link)',
+    exePath: 'C:\\Program Files\\Oculus\\Support\\oculus-runtime\\OVRServer_x64.exe',
+    args: '',
+    delay: 0,
+    autoKill: false,
+    categories: { racing: true, flight: true }
+  },
+  {
+    id: 'app-meta-debug-tool',
+    name: 'Meta Horizon Debug Tool (ODT)',
+    exePath: 'C:\\Program Files\\Oculus\\Support\\oculus-diagnostics\\OculusDebugTool.exe',
+    args: '',
+    delay: 1,
+    autoKill: false,
+    categories: { racing: true, flight: true }
+  },
+  {
+    id: 'app-vector-xr',
+    name: 'VectorXR App',
+    exePath: 'C:\\Program Files\\VectorXR\\VectorXR.exe',
+    args: '',
+    delay: 1,
+    autoKill: false,
+    categories: { racing: true, flight: true }
+  },
+  {
+    id: 'app-process-lasso',
+    name: 'Bitsum Process Lasso',
+    exePath: 'C:\\Program Files\\Process Lasso\\ProcessLasso.exe',
+    args: '-minimized',
+    delay: 0,
+    autoKill: false,
+    categories: { racing: true, flight: true }
+  },
+
+  // --- FLIGHT SIM APPS ---
   {
     id: 'app-srs',
     name: 'DCS Simple Radio Standalone (SRS)',
@@ -146,7 +184,7 @@ export const INITIAL_GAMES = [
         exePath: 'C:\\Program Files (x86)\\iRacing\\ui\\iRacingSim64DX11.exe',
         args: '-vr -openxr',
         autoLaunchGame: true,
-        enabledAppIds: ['app-fanatec', 'app-track-titan', 'app-garage61', 'app-bloops', 'app-crewchief'],
+        enabledAppIds: ['app-fanatec', 'app-track-titan', 'app-garage61', 'app-bloops', 'app-crewchief', 'app-meta-horizon'],
         appOverrides: {
           'app-crewchief': { args: '-iracing' }
         }
@@ -210,8 +248,7 @@ export const INITIAL_GAMES = [
         exePath: 'C:\\Program Files\\Eagle Dynamics\\DCS World OpenBeta\\bin\\DCS.exe',
         args: '--force_enable_VR',
         autoLaunchGame: true,
-        // Moza Cockpit (AB9 Base), SRS, VoiceAttack, SimShaker for Aviators, OpenKneeboard (TrackIR disabled in VR)
-        enabledAppIds: ['app-moza-cockpit', 'app-srs', 'app-voice-attack', 'app-simshaker-aviators', 'app-openkneeboard'],
+        enabledAppIds: ['app-moza-cockpit', 'app-meta-horizon', 'app-srs', 'app-voice-attack', 'app-simshaker-aviators', 'app-openkneeboard'],
         appOverrides: {}
       },
       {
@@ -221,7 +258,6 @@ export const INITIAL_GAMES = [
         exePath: 'C:\\Program Files\\Eagle Dynamics\\DCS World OpenBeta\\bin\\DCS.exe',
         args: '--force_disable_VR',
         autoLaunchGame: true,
-        // Moza Cockpit (AB9 Base), TrackIR, SRS, VoiceAttack, SimShaker for Aviators, OpenKneeboard
         enabledAppIds: ['app-moza-cockpit', 'app-trackir', 'app-srs', 'app-voice-attack', 'app-simshaker-aviators', 'app-openkneeboard'],
         appOverrides: {}
       }
@@ -241,8 +277,7 @@ export const INITIAL_GAMES = [
         exePath: 'C:\\Falcon BMS 4.37\\Launcher.exe',
         args: '-vr',
         autoLaunchGame: true,
-        // Moza Cockpit (AB9 Base), OpenKneeboard, FoxVox, SimShaker Wings (TrackIR disabled in VR)
-        enabledAppIds: ['app-moza-cockpit', 'app-openkneeboard', 'app-foxvox', 'app-simshaker-wings'],
+        enabledAppIds: ['app-moza-cockpit', 'app-meta-horizon', 'app-openkneeboard', 'app-foxvox', 'app-simshaker-wings'],
         appOverrides: {}
       },
       {
@@ -252,7 +287,6 @@ export const INITIAL_GAMES = [
         exePath: 'C:\\Falcon BMS 4.37\\Launcher.exe',
         args: '',
         autoLaunchGame: true,
-        // Moza Cockpit (AB9 Base), TrackIR, OpenKneeboard, FoxVox, SimShaker Wings
         enabledAppIds: ['app-moza-cockpit', 'app-trackir', 'app-openkneeboard', 'app-foxvox', 'app-simshaker-wings'],
         appOverrides: {}
       }
