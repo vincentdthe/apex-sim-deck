@@ -141,6 +141,7 @@ export default function App() {
   const handleLaunchProfile = async (game, profile) => {
     const enabledAppIds = profile.enabledAppIds || [];
     const appOverrides = profile.appOverrides || {};
+    const autoLaunchGame = profile.autoLaunchGame ?? true;
 
     const companionAppsToRun = enabledAppIds
       .map((id) => {
@@ -163,11 +164,13 @@ export default function App() {
       message: `Queued (Delay: ${app.delay}s)`
     }));
 
-    initialSteps.push({
-      name: `Main Game Executable (${game.name})`,
-      status: 'pending',
-      message: `Queued (${profile.args || 'Default flags'})`
-    });
+    if (autoLaunchGame) {
+      initialSteps.push({
+        name: `Main Game Executable (${game.name})`,
+        status: 'pending',
+        message: `Queued (${profile.args || 'Default flags'})`
+      });
+    }
 
     setCurrentLaunchData({
       gameName: game.name,
@@ -180,7 +183,7 @@ export default function App() {
     const payload = {
       profileName: profile.name,
       gameName: game.name,
-      gameExe: profile.exePath,
+      gameExe: autoLaunchGame ? profile.exePath : null,
       gameArgs: profile.args,
       companionApps: companionAppsToRun
     };
@@ -199,14 +202,16 @@ export default function App() {
         );
       }
 
-      const gameIdx = companionAppsToRun.length;
-      setLaunchStatusSteps((prev) =>
-        prev.map((s, idx) => (idx === gameIdx ? { ...s, status: 'running', message: `Starting ${game.name}...` } : s))
-      );
-      await new Promise((r) => setTimeout(r, 1000));
-      setLaunchStatusSteps((prev) =>
-        prev.map((s, idx) => (idx === gameIdx ? { ...s, status: 'completed', message: `Simulated launch of ${game.name}! [OK]` } : s))
-      );
+      if (autoLaunchGame) {
+        const gameIdx = companionAppsToRun.length;
+        setLaunchStatusSteps((prev) =>
+          prev.map((s, idx) => (idx === gameIdx ? { ...s, status: 'running', message: `Starting ${game.name}...` } : s))
+        );
+        await new Promise((r) => setTimeout(r, 1000));
+        setLaunchStatusSteps((prev) =>
+          prev.map((s, idx) => (idx === gameIdx ? { ...s, status: 'completed', message: `Simulated launch of ${game.name}! [OK]` } : s))
+        );
+      }
     }
   };
 

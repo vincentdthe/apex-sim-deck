@@ -13,6 +13,7 @@ export default function ProfileModal({
   const [isVr, setIsVr] = useState(profile?.isVr ?? true);
   const [exePath, setExePath] = useState(profile?.exePath || '');
   const [args, setArgs] = useState(profile?.args || (isVr ? '-vr' : ''));
+  const [autoLaunchGame, setAutoLaunchGame] = useState(profile?.autoLaunchGame ?? true);
   const [enabledAppIds, setEnabledAppIds] = useState(profile?.enabledAppIds || []);
   const [appOverrides, setAppOverrides] = useState(profile?.appOverrides || {});
 
@@ -64,6 +65,7 @@ export default function ProfileModal({
       isVr,
       exePath,
       args,
+      autoLaunchGame,
       enabledAppIds,
       appOverrides
     });
@@ -149,6 +151,28 @@ export default function ProfileModal({
               />
             </div>
 
+            {/* Auto Launch Game Executable Toggle */}
+            <div className="form-group" style={{ background: 'var(--bg-card)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+              <label className="checkbox-group">
+                <input
+                  type="checkbox"
+                  className="checkbox-input"
+                  checked={autoLaunchGame}
+                  onChange={(e) => setAutoLaunchGame(e.target.checked)}
+                />
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontWeight: 600, color: '#fff', fontSize: '0.9rem' }}>
+                    Automatically launch main game executable
+                  </span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
+                    {autoLaunchGame
+                      ? 'Launching this profile will start your background apps and then run the game.'
+                      : 'Launching this profile will set up your background apps ONLY (game will not be started).'}
+                  </span>
+                </div>
+              </label>
+            </div>
+
             {/* Companion Apps Selection Checklist */}
             <div className="form-group" style={{ marginTop: '0.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
@@ -160,7 +184,7 @@ export default function ProfileModal({
                 </span>
               </div>
 
-              <div style={{ background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '0.75rem', maxHeight: '280px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+              <div style={{ background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '0.75rem', maxHeight: '250px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                 {categoryRelevantApps.length === 0 ? (
                   <div style={{ color: 'var(--text-dim)', fontSize: '0.85rem', textAlign: 'center', padding: '1rem' }}>
                     No companion apps found for this category. Go to <strong>Settings Tab</strong> to add helper apps.
@@ -199,7 +223,6 @@ export default function ProfileModal({
                           </div>
                         </div>
 
-                        {/* Optional App Overrides when checked */}
                         {isChecked && (
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '0.6rem', marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px dashed rgba(255,255,255,0.08)' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
