@@ -1,8 +1,8 @@
 import { INITIAL_APPS, INITIAL_GAMES } from '../data/initialData';
 
 // Versioned storage keys so preset updates auto-apply to existing users
-const APPS_KEY = 'apex_sim_deck_apps_v6';
-const GAMES_KEY = 'apex_sim_deck_games_v6';
+const APPS_KEY = 'apex_sim_deck_apps_v7';
+const GAMES_KEY = 'apex_sim_deck_games_v7';
 
 export function loadApps() {
   try {

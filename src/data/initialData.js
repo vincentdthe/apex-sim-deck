@@ -84,8 +84,8 @@ export const INITIAL_APPS = [
     categories: { racing: true, flight: true }
   },
   {
-    id: 'app-meta-debug-tool',
-    name: 'Meta Horizon Debug Tool (ODT)',
+    id: 'app-oculus-debug-tool',
+    name: 'Oculus Debug Tool (ODT)',
     exePath: 'C:\\Program Files\\Meta Horizon\\Support\\oculus-diagnostics\\OculusDebugTool.exe',
     args: '',
     delay: 1,

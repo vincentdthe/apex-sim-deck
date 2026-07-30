@@ -11,6 +11,8 @@ const __dirname = path.dirname(__filename);
 let mainWindow;
 
 function createWindow() {
+  const preloadPath = path.join(__dirname, 'preload.js');
+
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 850,
@@ -19,7 +21,7 @@ function createWindow() {
     backgroundColor: '#0a0d14',
     title: 'ApexLaunch Sim Deck',
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: preloadPath,
       nodeIntegration: false,
       contextIsolation: true
     }
@@ -58,7 +60,7 @@ ipcMain.handle('dialog:selectExe', async () => {
   return result.filePaths[0];
 });
 
-// Select Image File IPC handler (NEW)
+// Select Image File IPC handler
 ipcMain.handle('dialog:selectImage', async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
     title: 'Select Game Banner Image',
@@ -69,12 +71,11 @@ ipcMain.handle('dialog:selectImage', async () => {
     ]
   });
   if (result.canceled || result.filePaths.length === 0) return null;
-  // Convert local Windows file path to file:// protocol for web image loading
   const filePath = result.filePaths[0];
   return `file:///${filePath.replace(/\\/g, '/')}`;
 });
 
-// Check if a process is already running on Windows (NEW)
+// Check if a process is already running on Windows
 async function isProcessRunning(exePath) {
   if (!exePath) return false;
   const exeName = path.basename(exePath);
@@ -90,7 +91,7 @@ ipcMain.handle('process:checkRunning', async (event, exePath) => {
   return await isProcessRunning(exePath);
 });
 
-// Launch Sequence IPC Handler
+// Launch Sequence IPC Handler (Real Native Windows Execution)
 ipcMain.handle('launch:runProfile', async (event, payload) => {
   const { profileName, gameName, gameExe, gameArgs, companionApps } = payload;
   const spawnedPids = [];
@@ -116,10 +117,10 @@ ipcMain.handle('launch:runProfile', async (event, payload) => {
         continue;
       }
 
-      // Check if app is ALREADY running on Windows
+      // Safeguard: Check if app is ALREADY running on Windows
       const alreadyRunning = await isProcessRunning(appItem.exePath);
       if (alreadyRunning) {
-        sendStatus(i, 'already_running', `${appItem.name} is already running on your PC. Skipping launch.`);
+        sendStatus(i, 'already_running', `${appItem.name} is already running on your PC. Skipping duplicate launch.`);
         continue;
       }
 
@@ -151,13 +152,16 @@ ipcMain.handle('launch:runProfile', async (event, payload) => {
       }
     }
 
-    // 2. Launch Main Game Executable
-    const gameStepIndex = companionApps.length;
-
+    // 2. Launch Main Game Executable (if configured)
     if (!gameExe) {
-      sendStatus(gameStepIndex, 'error', `Main game executable path not configured for ${gameName}.`);
-      return { success: false, error: 'Executable path not configured' };
+      // Main game auto-launch skipped or path not set
+      if (companionApps.length > 0) {
+        sendStatus(companionApps.length, 'completed', `Background companion app sequence finished.`);
+      }
+      return { success: true, message: 'Companion apps processed' };
     }
+
+    const gameStepIndex = companionApps.length;
 
     const gameAlreadyRunning = await isProcessRunning(gameExe);
     if (gameAlreadyRunning) {
