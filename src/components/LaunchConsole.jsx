@@ -1,5 +1,5 @@
 import React from 'react';
-import { Terminal, CheckCircle2, AlertCircle, X, Cpu } from 'lucide-react';
+import { Terminal, CheckCircle2, AlertCircle, X, Cpu, Info } from 'lucide-react';
 
 export default function LaunchConsole({ isVisible, launchData, statusSteps, onClose }) {
   if (!isVisible || !launchData) return null;
@@ -30,6 +30,9 @@ export default function LaunchConsole({ isVisible, launchData, statusSteps, onCl
           if (step.status === 'completed') {
             statusIcon = <CheckCircle2 size={16} color="var(--success-color)" />;
             statusStyle = { borderLeft: '3px solid var(--success-color)' };
+          } else if (step.status === 'already_running') {
+            statusIcon = <Info size={16} color="var(--telemetry-cyan)" />;
+            statusStyle = { borderLeft: '3px solid var(--telemetry-cyan)', background: 'rgba(0, 242, 254, 0.05)' };
           } else if (step.status === 'running') {
             statusIcon = <div className="status-spinner" />;
             statusStyle = { borderLeft: '3px solid var(--telemetry-cyan)', background: 'rgba(0, 242, 254, 0.08)' };
@@ -45,7 +48,7 @@ export default function LaunchConsole({ isVisible, launchData, statusSteps, onCl
             <div key={idx} className="console-step-item" style={statusStyle}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 {statusIcon}
-                <span style={{ fontWeight: 600, color: step.status === 'completed' ? '#fff' : 'var(--text-muted)' }}>
+                <span style={{ fontWeight: 600, color: step.status === 'completed' || step.status === 'already_running' ? '#fff' : 'var(--text-muted)' }}>
                   Step {idx + 1}: {step.name || step.message}
                 </span>
               </div>

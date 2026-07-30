@@ -2,12 +2,13 @@ import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { spawn, exec } from 'child_process';
+import util from 'util';
 
+const execPromise = util.promisify(exec);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 let mainWindow;
-const runningCompanionPids = new Map(); // gameId -> [pids]
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -27,7 +28,6 @@ function createWindow() {
   if (process.env.VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
   } else {
-    // In production or built Vite dist
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
   }
 }
@@ -44,7 +44,7 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
 
-// Select File Dialog IPC handler
+// Select Executable IPC handler
 ipcMain.handle('dialog:selectExe', async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
     title: 'Select Executable File',
@@ -58,6 +58,38 @@ ipcMain.handle('dialog:selectExe', async () => {
   return result.filePaths[0];
 });
 
+// Select Image File IPC handler (NEW)
+ipcMain.handle('dialog:selectImage', async () => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: 'Select Game Banner Image',
+    properties: ['openFile'],
+    filters: [
+      { name: 'Image Files (*.png, *.jpg, *.jpeg, *.webp, *.bmp)', extensions: ['png', 'jpg', 'jpeg', 'webp', 'bmp'] },
+      { name: 'All Files', extensions: ['*'] }
+    ]
+  });
+  if (result.canceled || result.filePaths.length === 0) return null;
+  // Convert local Windows file path to file:// protocol for web image loading
+  const filePath = result.filePaths[0];
+  return `file:///${filePath.replace(/\\/g, '/')}`;
+});
+
+// Check if a process is already running on Windows (NEW)
+async function isProcessRunning(exePath) {
+  if (!exePath) return false;
+  const exeName = path.basename(exePath);
+  try {
+    const { stdout } = await execPromise(`tasklist /FI "IMAGENAME eq ${exeName}" /NH`);
+    return stdout.toLowerCase().includes(exeName.toLowerCase());
+  } catch (e) {
+    return false;
+  }
+}
+
+ipcMain.handle('process:checkRunning', async (event, exePath) => {
+  return await isProcessRunning(exePath);
+});
+
 // Launch Sequence IPC Handler
 ipcMain.handle('launch:runProfile', async (event, payload) => {
   const { profileName, gameName, gameExe, gameArgs, companionApps } = payload;
@@ -67,7 +99,7 @@ ipcMain.handle('launch:runProfile', async (event, payload) => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('launch:status', {
         stepIndex,
-        status, // 'pending' | 'running' | 'completed' | 'error'
+        status, // 'pending' | 'running' | 'already_running' | 'completed' | 'error'
         message,
         pid
       });
@@ -75,23 +107,29 @@ ipcMain.handle('launch:runProfile', async (event, payload) => {
   };
 
   try {
-    // 1. Launch Companion Apps sequentially with configured delays
+    // 1. Launch Companion Apps sequentially with process check & delays
     for (let i = 0; i < companionApps.length; i++) {
       const appItem = companionApps[i];
-      const delayMs = (appItem.delay || 0) * 1000;
-
-      sendStatus(i, 'pending', `Waiting ${appItem.delay || 0}s before starting ${appItem.name}...`);
-
-      if (delayMs > 0) {
-        await new Promise((resolve) => setTimeout(resolve, delayMs));
-      }
-
-      sendStatus(i, 'running', `Starting ${appItem.name}...`);
 
       if (!appItem.exePath) {
         sendStatus(i, 'error', `Skipped ${appItem.name}: Executable path not set.`);
         continue;
       }
+
+      // Check if app is ALREADY running on Windows
+      const alreadyRunning = await isProcessRunning(appItem.exePath);
+      if (alreadyRunning) {
+        sendStatus(i, 'already_running', `${appItem.name} is already running on your PC. Skipping launch.`);
+        continue;
+      }
+
+      const delayMs = (appItem.delay || 0) * 1000;
+      if (delayMs > 0) {
+        sendStatus(i, 'pending', `Waiting ${appItem.delay || 0}s before starting ${appItem.name}...`);
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+
+      sendStatus(i, 'running', `Starting ${appItem.name}...`);
 
       try {
         const args = appItem.args ? appItem.args.split(' ').filter(Boolean) : [];
@@ -115,12 +153,19 @@ ipcMain.handle('launch:runProfile', async (event, payload) => {
 
     // 2. Launch Main Game Executable
     const gameStepIndex = companionApps.length;
-    sendStatus(gameStepIndex, 'running', `Launching main game: ${gameName} (${profileName})...`);
 
     if (!gameExe) {
       sendStatus(gameStepIndex, 'error', `Main game executable path not configured for ${gameName}.`);
       return { success: false, error: 'Executable path not configured' };
     }
+
+    const gameAlreadyRunning = await isProcessRunning(gameExe);
+    if (gameAlreadyRunning) {
+      sendStatus(gameStepIndex, 'already_running', `${gameName} is already running on your PC.`);
+      return { success: true, message: 'Game already running' };
+    }
+
+    sendStatus(gameStepIndex, 'running', `Launching main game: ${gameName} (${profileName})...`);
 
     const gameArgsList = gameArgs ? gameArgs.split(' ').filter(Boolean) : [];
     const gameProc = spawn(gameExe, gameArgsList, {
@@ -132,7 +177,6 @@ ipcMain.handle('launch:runProfile', async (event, payload) => {
       gameProc.unref();
       sendStatus(gameStepIndex, 'completed', `Started ${gameName} successfully! (PID: ${gameProc.pid})`, gameProc.pid);
 
-      // Track auto-kill companion apps if game monitoring is requested
       const autoKillApps = spawnedPids.filter((p) => p.autoKill);
       if (autoKillApps.length > 0) {
         monitorGameProcess(gameProc.pid, gameExe, autoKillApps);
@@ -149,11 +193,9 @@ ipcMain.handle('launch:runProfile', async (event, payload) => {
   }
 });
 
-// Process monitoring helper for auto-kill
 function monitorGameProcess(gamePid, gameExePath, autoKillApps) {
   const exeName = path.basename(gameExePath);
   const checkInterval = setInterval(() => {
-    // Check if process is still running on Windows
     exec(`tasklist /FI "PID eq ${gamePid}"`, (err, stdout) => {
       if (err || !stdout.includes(gamePid.toString())) {
         clearInterval(checkInterval);
