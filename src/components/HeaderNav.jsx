@@ -1,5 +1,5 @@
 import React from 'react';
-import { Flag, Plane, Wrench, Settings, Download, Upload, RefreshCw, Gauge } from 'lucide-react';
+import { Flag, Plane, AppWindow, Settings, Download, Upload, RefreshCw, Gauge } from 'lucide-react';
 
 export default function HeaderNav({ activeTab, setActiveTab, onExport, onImport, onReset }) {
   const handleImportFile = (e) => {
@@ -48,11 +48,11 @@ export default function HeaderNav({ activeTab, setActiveTab, onExport, onImport,
         </button>
 
         <button
-          className={`nav-tab ${activeTab === 'utilities' ? 'active-racing' : ''}`}
+          className={`nav-tab ${activeTab === 'utilities' ? 'active-apps' : ''}`}
           onClick={() => setActiveTab('utilities')}
         >
-          <Wrench size={18} />
-          <span>Utilities</span>
+          <AppWindow size={18} />
+          <span>Apps</span>
         </button>
 
         <button

@@ -166,11 +166,18 @@ body {
   box-shadow: 0 0 15px var(--flight-glow);
 }
 
-.nav-tab.active-settings {
+.nav-tab.active-apps {
   background: linear-gradient(135deg, rgba(0, 242, 254, 0.25), rgba(0, 242, 254, 0.08));
   color: #fff;
   border: 1px solid var(--telemetry-cyan);
   box-shadow: 0 0 15px var(--telemetry-glow);
+}
+
+.nav-tab.active-settings {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
 }
 
 /* Main Content Area */

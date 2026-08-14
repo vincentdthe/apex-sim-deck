@@ -6,6 +6,9 @@ dist/
 dist_app/
 release/
 
+# Zip packages
+*.zip
+
 # Logs & OS files
 *.log
 .DS_Store

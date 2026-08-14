@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Search, Terminal, FolderOpen, CheckCircle2, Circle } from 'lucide-react';
+import { Play, Search, Terminal, FolderOpen } from 'lucide-react';
 
 export default function UtilitiesView({ apps, onLaunchApp }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -38,10 +38,10 @@ export default function UtilitiesView({ apps, onLaunchApp }) {
       <div className="controls-bar">
         <div>
           <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.6rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            🛠️ Manual Utilities & App Launcher
+            📱 Registered Applications (Manual Launcher)
           </h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginTop: '0.2rem' }}>
-            Launch any individual hardware utility, telemetry agent, or flight tool manually with a single click. Checks live running state on Windows.
+            Launch any registered hardware app, flight tool, or racing utility independently with one click without starting a game profile.
           </p>
         </div>
 
@@ -62,11 +62,11 @@ export default function UtilitiesView({ apps, onLaunchApp }) {
       {/* Category filters */}
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem' }}>
         <button
-          className={`nav-tab ${filterCategory === 'all' ? 'active-settings' : ''}`}
+          className={`nav-tab ${filterCategory === 'all' ? 'active-apps' : ''}`}
           style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}
           onClick={() => setFilterCategory('all')}
         >
-          All Utilities ({apps.length})
+          All Applications ({apps.length})
         </button>
         <button
           className={`nav-tab ${filterCategory === 'racing' ? 'active-racing' : ''}`}
@@ -84,11 +84,11 @@ export default function UtilitiesView({ apps, onLaunchApp }) {
         </button>
       </div>
 
-      {/* Utilities Grid */}
+      {/* Applications Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '1.25rem' }}>
         {filteredApps.length === 0 ? (
           <div className="game-card" style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-muted)', gridColumn: '1 / -1' }}>
-            No utilities found. Go to <strong>Settings Tab</strong> to add helper applications.
+            No applications found. Go to <strong>Settings Tab</strong> to add applications.
           </div>
         ) : (
           filteredApps.map((app) => {
