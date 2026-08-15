@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Search, Terminal, FolderOpen } from 'lucide-react';
+import { Play, Search, Terminal, FolderOpen, Edit2 } from 'lucide-react';
 
-export default function UtilitiesView({ apps, onLaunchApp }) {
+export default function UtilitiesView({ apps, onLaunchApp, onEditApp }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all'); // 'all' | 'racing' | 'flight'
   const [runningStates, setRunningStates] = useState({}); // { appId: boolean }
@@ -110,6 +110,10 @@ export default function UtilitiesView({ apps, onLaunchApp }) {
                           ⚪ IDLE
                         </span>
                       )}
+                      
+                      <button className="btn-icon" onClick={() => onEditApp(app)} title="Edit Application Settings">
+                        <Edit2 size={15} />
+                      </button>
                     </div>
                   </div>
 
@@ -126,14 +130,25 @@ export default function UtilitiesView({ apps, onLaunchApp }) {
                   )}
                 </div>
 
-                <button
-                  className={`btn-primary ${isRunning ? '' : 'btn-accent-racing'}`}
-                  style={{ width: '100%', justifyContent: 'center', marginTop: '0.5rem', opacity: isRunning ? 0.7 : 1 }}
-                  onClick={() => onLaunchApp(app)}
-                >
-                  <Play size={14} fill="currentColor" />
-                  <span>{isRunning ? 'Re-launch App' : 'Launch App'}</span>
-                </button>
+                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                  <button
+                    className={`btn-primary ${isRunning ? '' : 'btn-accent-racing'}`}
+                    style={{ flex: 1, justifyContent: 'center', opacity: isRunning ? 0.7 : 1 }}
+                    onClick={() => onLaunchApp(app)}
+                  >
+                    <Play size={14} fill="currentColor" />
+                    <span>{isRunning ? 'Re-launch App' : 'Launch App'}</span>
+                  </button>
+
+                  <button
+                    className="btn-primary"
+                    style={{ padding: '0.5rem 0.75rem' }}
+                    onClick={() => onEditApp(app)}
+                    title="Edit Executable Path & Settings"
+                  >
+                    <Edit2 size={15} />
+                  </button>
+                </div>
               </div>
             );
           })

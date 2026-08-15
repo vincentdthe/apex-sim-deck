@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Check, FolderOpen, Glasses, Monitor, Clock, Terminal } from 'lucide-react';
+import { X, Check, FolderOpen, Glasses, Monitor, Clock, Terminal, Edit2 } from 'lucide-react';
 
 export default function ProfileModal({
   gameId,
@@ -7,6 +7,7 @@ export default function ProfileModal({
   profile, // null for new, profile object for edit
   allApps,
   onSave,
+  onEditApp,
   onClose
 }) {
   const [name, setName] = useState(profile?.name || (category === 'racing' ? 'iRacing VR Mode' : 'DCS VR Profile'));
@@ -217,9 +218,20 @@ export default function ProfileModal({
                             </span>
                           </label>
 
-                          <div style={{ display: 'flex', gap: '0.3rem' }}>
-                            {app.categories?.racing && <span className="badge-pill badge-racing" style={{ fontSize: '0.65rem' }}>Racing</span>}
-                            {app.categories?.flight && <span className="badge-pill badge-flight" style={{ fontSize: '0.65rem' }}>Flight</span>}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                            <button
+                              type="button"
+                              className="btn-icon"
+                              onClick={() => onEditApp(app)}
+                              title="Edit Application Path & Settings"
+                            >
+                              <Edit2 size={14} />
+                            </button>
+
+                            <div style={{ display: 'flex', gap: '0.2rem' }}>
+                              {app.categories?.racing && <span className="badge-pill badge-racing" style={{ fontSize: '0.65rem' }}>Racing</span>}
+                              {app.categories?.flight && <span className="badge-pill badge-flight" style={{ fontSize: '0.65rem' }}>Flight</span>}
+                            </div>
                           </div>
                         </div>
 

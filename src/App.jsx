@@ -5,6 +5,7 @@ import SimCategoryView from './components/SimCategoryView';
 import UtilitiesView from './components/UtilitiesView';
 import ProfileModal from './components/ProfileModal';
 import GameModal from './components/AppModal';
+import AppEditorModal from './components/AppEditorModal';
 import LaunchConsole from './components/LaunchConsole';
 import { loadApps, saveApps, loadGames, saveGames, exportConfig, resetToDefaults } from './utils/storage';
 
@@ -16,6 +17,7 @@ export default function App() {
   // Modal States
   const [activeGameModal, setActiveGameModal] = useState(null); // null | { game, category }
   const [activeProfileModal, setActiveProfileModal] = useState(null); // null | { gameId, category, profile }
+  const [activeAppEditModal, setActiveAppEditModal] = useState(null); // null | app object
 
   // Console Drawer Launch State
   const [isConsoleVisible, setIsConsoleVisible] = useState(false);
@@ -53,13 +55,20 @@ export default function App() {
     }
   }, []);
 
-  // --- APP MANAGERS (Settings Tab) ---
+  // --- APP MANAGERS ---
   const handleAddApp = (newApp) => {
     setApps((prev) => [...prev, newApp]);
   };
 
   const handleEditApp = (updatedApp) => {
-    setApps((prev) => prev.map((a) => (a.id === updatedApp.id ? updatedApp : a)));
+    setApps((prev) => {
+      const exists = prev.some((a) => a.id === updatedApp.id);
+      if (exists) {
+        return prev.map((a) => (a.id === updatedApp.id ? updatedApp : a));
+      } else {
+        return [...prev, updatedApp];
+      }
+    });
   };
 
   const handleDeleteApp = (appId) => {
@@ -112,7 +121,7 @@ export default function App() {
     }
   };
 
-  // --- LAUNCH SINGLE APP (MANUAL UTILITY TAB) ---
+  // --- LAUNCH SINGLE APP (MANUAL APPS TAB) ---
   const handleLaunchSingleApp = async (app) => {
     const payload = {
       profileName: 'Manual Utility Launch',
@@ -251,6 +260,7 @@ export default function App() {
           <UtilitiesView
             apps={apps}
             onLaunchApp={handleLaunchSingleApp}
+            onEditApp={(app) => setActiveAppEditModal(app)}
           />
         )}
 
@@ -288,7 +298,17 @@ export default function App() {
           profile={activeProfileModal.profile}
           allApps={apps}
           onSave={handleSaveProfile}
+          onEditApp={(app) => setActiveAppEditModal(app)}
           onClose={() => setActiveProfileModal(null)}
+        />
+      )}
+
+      {/* Direct App Editor Modal */}
+      {activeAppEditModal && (
+        <AppEditorModal
+          app={activeAppEditModal}
+          onSave={handleEditApp}
+          onClose={() => setActiveAppEditModal(null)}
         />
       )}
 

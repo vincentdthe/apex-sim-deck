@@ -9,7 +9,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "electron": "electron .",
-    "package": "vite build && electron-packager . \"ApexLaunch Sim Deck\" --platform=win32 --arch=x64 --out=dist_app --overwrite"
+    "package": "vite build && electron-packager . \"ApexLaunch Sim Deck\" --platform=win32 --arch=x64 --out=release --overwrite"
   },
   "dependencies": {
     "lucide-react": "^0.344.0",
