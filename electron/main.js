@@ -46,13 +46,15 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
 
-// Select Executable IPC handler
+// Select Executable / Script IPC handler (.exe, .ps1, .bat, .cmd)
 ipcMain.handle('dialog:selectExe', async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
-    title: 'Select Executable File',
+    title: 'Select Executable or Script File',
     properties: ['openFile'],
     filters: [
-      { name: 'Executables (*.exe, *.bat, *.cmd, *.ps1)', extensions: ['exe', 'bat', 'cmd', 'ps1'] },
+      { name: 'Executables & Scripts (*.exe, *.ps1, *.bat, *.cmd)', extensions: ['exe', 'ps1', 'bat', 'cmd'] },
+      { name: 'PowerShell Scripts (*.ps1)', extensions: ['ps1'] },
+      { name: 'Batch Files (*.bat, *.cmd)', extensions: ['bat', 'cmd'] },
       { name: 'All Files', extensions: ['*'] }
     ]
   });
@@ -76,9 +78,14 @@ ipcMain.handle('dialog:selectImage', async () => {
 });
 
 // Check if a process is already running on Windows
-async function isProcessRunning(exePath) {
-  if (!exePath) return false;
-  const exeName = path.basename(exePath);
+async function isProcessRunning(targetPath) {
+  if (!targetPath) return false;
+  const ext = path.extname(targetPath).toLowerCase();
+  
+  // For scripts (.ps1, .bat), check by script filename
+  const fileName = path.basename(targetPath);
+  const exeName = (ext === '.ps1' || ext === '.bat' || ext === '.cmd') ? fileName : path.basename(targetPath);
+
   try {
     const { stdout } = await execPromise(`tasklist /FI "IMAGENAME eq ${exeName}" /NH`);
     return stdout.toLowerCase().includes(exeName.toLowerCase());
@@ -90,6 +97,37 @@ async function isProcessRunning(exePath) {
 ipcMain.handle('process:checkRunning', async (event, exePath) => {
   return await isProcessRunning(exePath);
 });
+
+// Helper function to spawn Executables (.exe) or Scripts (.ps1, .bat, .cmd)
+function spawnProcessOrScript(targetPath, rawArgs = '') {
+  const ext = path.extname(targetPath).toLowerCase();
+  const userArgs = rawArgs ? rawArgs.split(' ').filter(Boolean) : [];
+
+  if (ext === '.ps1') {
+    // Launch PowerShell Script with ExecutionPolicy Bypass
+    return spawn('powershell.exe', [
+      '-NoProfile',
+      '-ExecutionPolicy',
+      'Bypass',
+      '-File',
+      targetPath,
+      ...userArgs
+    ], { detached: true, stdio: 'ignore' });
+  } else if (ext === '.bat' || ext === '.cmd') {
+    // Launch Batch Script via CMD
+    return spawn('cmd.exe', [
+      '/c',
+      targetPath,
+      ...userArgs
+    ], { detached: true, stdio: 'ignore' });
+  } else {
+    // Launch Standard Executable (.exe)
+    return spawn(targetPath, userArgs, {
+      detached: true,
+      stdio: 'ignore'
+    });
+  }
+}
 
 // Launch Sequence IPC Handler (Real Native Windows Execution)
 ipcMain.handle('launch:runProfile', async (event, payload) => {
@@ -108,16 +146,16 @@ ipcMain.handle('launch:runProfile', async (event, payload) => {
   };
 
   try {
-    // 1. Launch Companion Apps sequentially with process check & delays
+    // 1. Launch Companion Apps / Optimization Scripts sequentially with delays
     for (let i = 0; i < companionApps.length; i++) {
       const appItem = companionApps[i];
 
       if (!appItem.exePath) {
-        sendStatus(i, 'error', `Skipped ${appItem.name}: Executable path not set.`);
+        sendStatus(i, 'error', `Skipped ${appItem.name}: File path not set.`);
         continue;
       }
 
-      // Safeguard: Check if app is ALREADY running on Windows
+      // Safeguard: Check if app/script is ALREADY running on Windows
       const alreadyRunning = await isProcessRunning(appItem.exePath);
       if (alreadyRunning) {
         sendStatus(i, 'already_running', `${appItem.name} is already running on your PC. Skipping duplicate launch.`);
@@ -130,14 +168,12 @@ ipcMain.handle('launch:runProfile', async (event, payload) => {
         await new Promise((resolve) => setTimeout(resolve, delayMs));
       }
 
-      sendStatus(i, 'running', `Starting ${appItem.name}...`);
+      const ext = path.extname(appItem.exePath).toLowerCase();
+      const isScript = (ext === '.ps1' || ext === '.bat' || ext === '.cmd');
+      sendStatus(i, 'running', `Starting ${isScript ? 'script' : 'app'}: ${appItem.name}...`);
 
       try {
-        const args = appItem.args ? appItem.args.split(' ').filter(Boolean) : [];
-        const child = spawn(appItem.exePath, args, {
-          detached: true,
-          stdio: 'ignore'
-        });
+        const child = spawnProcessOrScript(appItem.exePath, appItem.args);
         child.unref();
 
         if (child.pid) {
@@ -152,12 +188,12 @@ ipcMain.handle('launch:runProfile', async (event, payload) => {
       }
     }
 
-    // 2. Launch Main Game Executable (if configured)
+    // 2. Launch Main Game Executable / Script (if configured)
     if (!gameExe) {
       if (companionApps.length > 0) {
-        sendStatus(companionApps.length, 'completed', `Background companion app sequence finished.`);
+        sendStatus(companionApps.length, 'completed', `Background app and optimization script sequence finished.`);
       }
-      return { success: true, message: 'Companion apps processed' };
+      return { success: true, message: 'Companion apps & scripts processed' };
     }
 
     const gameStepIndex = companionApps.length;
@@ -170,11 +206,7 @@ ipcMain.handle('launch:runProfile', async (event, payload) => {
 
     sendStatus(gameStepIndex, 'running', `Launching main game: ${gameName} (${profileName})...`);
 
-    const gameArgsList = gameArgs ? gameArgs.split(' ').filter(Boolean) : [];
-    const gameProc = spawn(gameExe, gameArgsList, {
-      detached: true,
-      stdio: 'ignore'
-    });
+    const gameProc = spawnProcessOrScript(gameExe, gameArgs);
 
     if (gameProc.pid) {
       gameProc.unref();
