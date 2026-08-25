@@ -3,11 +3,13 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { spawn, exec } from 'child_process';
 import util from 'util';
+import https from 'https';
 
 const execPromise = util.promisify(exec);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const CURRENT_VERSION = '1.0.1';
 let mainWindow;
 
 function createWindow() {
@@ -46,7 +48,69 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
 
-// Select Executable / Script IPC handler (.exe, .ps1, .bat, .cmd)
+// Auto-Updater: Check GitHub Releases API for latest version
+ipcMain.handle('app:checkUpdate', async () => {
+  return new Promise((resolve) => {
+    const options = {
+      hostname: 'api.github.com',
+      path: '/repos/vincentdthe/apex-sim-deck/releases/latest',
+      method: 'GET',
+      headers: {
+        'User-Agent': 'ApexLaunch-Sim-Deck-App'
+      }
+    };
+
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', (chunk) => { data += chunk; });
+      res.on('end', () => {
+        try {
+          if (res.statusCode === 200) {
+            const release = JSON.parse(data);
+            const latestVersion = (release.tag_name || '').replace(/^v/, '');
+            const updateAvailable = compareVersions(latestVersion, CURRENT_VERSION) > 0;
+            const asset = (release.assets || []).find(a => a.name.endsWith('.zip'));
+
+            resolve({
+              success: true,
+              currentVersion: CURRENT_VERSION,
+              latestVersion: release.tag_name || latestVersion,
+              updateAvailable,
+              releaseNotes: release.body || 'No release notes provided.',
+              downloadUrl: asset ? asset.browser_download_url : release.html_url,
+              releaseUrl: release.html_url
+            });
+          } else {
+            resolve({ success: false, currentVersion: CURRENT_VERSION, updateAvailable: false });
+          }
+        } catch (e) {
+          resolve({ success: false, currentVersion: CURRENT_VERSION, updateAvailable: false });
+        }
+      });
+    });
+
+    req.on('error', () => {
+      resolve({ success: false, currentVersion: CURRENT_VERSION, updateAvailable: false });
+    });
+
+    req.end();
+  });
+});
+
+// Helper function to compare semver strings (e.g. "1.0.2" vs "1.0.1")
+function compareVersions(v1, v2) {
+  const p1 = (v1 || '').split('.').map(Number);
+  const p2 = (v2 || '').split('.').map(Number);
+  for (let i = 0; i < Math.max(p1.length, p2.length); i++) {
+    const num1 = p1[i] || 0;
+    const num2 = p2[i] || 0;
+    if (num1 > num2) return 1;
+    if (num1 < num2) return -1;
+  }
+  return 0;
+}
+
+// Select Executable / Script IPC handler
 ipcMain.handle('dialog:selectExe', async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
     title: 'Select Executable or Script File',
@@ -81,8 +145,6 @@ ipcMain.handle('dialog:selectImage', async () => {
 async function isProcessRunning(targetPath) {
   if (!targetPath) return false;
   const ext = path.extname(targetPath).toLowerCase();
-  
-  // For scripts (.ps1, .bat), check by script filename
   const fileName = path.basename(targetPath);
   const exeName = (ext === '.ps1' || ext === '.bat' || ext === '.cmd') ? fileName : path.basename(targetPath);
 
@@ -104,7 +166,6 @@ function spawnProcessOrScript(targetPath, rawArgs = '') {
   const userArgs = rawArgs ? rawArgs.split(' ').filter(Boolean) : [];
 
   if (ext === '.ps1') {
-    // Launch PowerShell Script with ExecutionPolicy Bypass
     return spawn('powershell.exe', [
       '-NoProfile',
       '-ExecutionPolicy',
@@ -114,14 +175,12 @@ function spawnProcessOrScript(targetPath, rawArgs = '') {
       ...userArgs
     ], { detached: true, stdio: 'ignore' });
   } else if (ext === '.bat' || ext === '.cmd') {
-    // Launch Batch Script via CMD
     return spawn('cmd.exe', [
       '/c',
       targetPath,
       ...userArgs
     ], { detached: true, stdio: 'ignore' });
   } else {
-    // Launch Standard Executable (.exe)
     return spawn(targetPath, userArgs, {
       detached: true,
       stdio: 'ignore'
@@ -129,7 +188,7 @@ function spawnProcessOrScript(targetPath, rawArgs = '') {
   }
 }
 
-// Launch Sequence IPC Handler (Real Native Windows Execution)
+// Launch Sequence IPC Handler
 ipcMain.handle('launch:runProfile', async (event, payload) => {
   const { profileName, gameName, gameExe, gameArgs, companionApps } = payload;
   const spawnedPids = [];
@@ -138,7 +197,7 @@ ipcMain.handle('launch:runProfile', async (event, payload) => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('launch:status', {
         stepIndex,
-        status, // 'pending' | 'running' | 'already_running' | 'completed' | 'error'
+        status,
         message,
         pid
       });
@@ -146,7 +205,6 @@ ipcMain.handle('launch:runProfile', async (event, payload) => {
   };
 
   try {
-    // 1. Launch Companion Apps / Optimization Scripts sequentially with delays
     for (let i = 0; i < companionApps.length; i++) {
       const appItem = companionApps[i];
 
@@ -155,7 +213,6 @@ ipcMain.handle('launch:runProfile', async (event, payload) => {
         continue;
       }
 
-      // Safeguard: Check if app/script is ALREADY running on Windows
       const alreadyRunning = await isProcessRunning(appItem.exePath);
       if (alreadyRunning) {
         sendStatus(i, 'already_running', `${appItem.name} is already running on your PC. Skipping duplicate launch.`);
@@ -188,7 +245,6 @@ ipcMain.handle('launch:runProfile', async (event, payload) => {
       }
     }
 
-    // 2. Launch Main Game Executable / Script (if configured)
     if (!gameExe) {
       if (companionApps.length > 0) {
         sendStatus(companionApps.length, 'completed', `Background app and optimization script sequence finished.`);
