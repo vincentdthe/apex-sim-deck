@@ -10,5 +10,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     const subscription = (event, data) => callback(data);
     ipcRenderer.on('launch:status', subscription);
     return () => ipcRenderer.removeListener('launch:status', subscription);
+  },
+  onManualUpdateResult: (callback) => {
+    const subscription = (event, data) => callback(data);
+    ipcRenderer.on('app:manualUpdateResult', subscription);
+    return () => ipcRenderer.removeListener('app:manualUpdateResult', subscription);
   }
 });

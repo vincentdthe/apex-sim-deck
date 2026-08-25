@@ -1,17 +1,48 @@
 import React, { useState, useEffect } from 'react';
-import { Flag, Plane, AppWindow, Settings, Download, Upload, RefreshCw, Gauge, Sparkles, ExternalLink, X } from 'lucide-react';
+import { Flag, Plane, AppWindow, Settings, Download, Upload, RefreshCw, Gauge, Sparkles, ExternalLink, X, RotateCw, CheckCircle2 } from 'lucide-react';
 
 export default function HeaderNav({ activeTab, setActiveTab, onExport, onImport, onReset }) {
   const [updateInfo, setUpdateInfo] = useState(null);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
+  const [upToDateNotice, setUpToDateNotice] = useState(false);
+
+  const performUpdateCheck = async (isManual = false) => {
+    if (window.electronAPI?.checkUpdate) {
+      if (isManual) setIsCheckingUpdate(true);
+      const res = await window.electronAPI.checkUpdate();
+      if (isManual) setIsCheckingUpdate(false);
+
+      if (res && res.success) {
+        setUpdateInfo(res);
+        if (res.updateAvailable) {
+          setIsUpdateModalOpen(true);
+        } else if (isManual) {
+          setUpToDateNotice(true);
+          setTimeout(() => setUpToDateNotice(false), 4000);
+        }
+      } else if (isManual) {
+        alert('Could not connect to update server.');
+      }
+    }
+  };
 
   useEffect(() => {
-    if (window.electronAPI?.checkUpdate) {
-      window.electronAPI.checkUpdate().then((res) => {
+    performUpdateCheck(false);
+
+    if (window.electronAPI?.onManualUpdateResult) {
+      const unsubscribe = window.electronAPI.onManualUpdateResult((res) => {
         if (res && res.success) {
           setUpdateInfo(res);
+          if (res.updateAvailable) {
+            setIsUpdateModalOpen(true);
+          } else {
+            setUpToDateNotice(true);
+            setTimeout(() => setUpToDateNotice(false), 4000);
+          }
         }
       });
+      return () => unsubscribe();
     }
   }, []);
 
@@ -86,7 +117,7 @@ export default function HeaderNav({ activeTab, setActiveTab, onExport, onImport,
         </nav>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          {/* Update Available Badge */}
+          {/* Animated Update Available Alert Badge */}
           {updateInfo?.updateAvailable && (
             <button
               className="btn-primary"
@@ -106,7 +137,24 @@ export default function HeaderNav({ activeTab, setActiveTab, onExport, onImport,
             </button>
           )}
 
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          {/* Up to Date Toast Notice */}
+          {upToDateNotice && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--success-color)', fontSize: '0.8rem', fontFamily: 'var(--font-mono)' }}>
+              <CheckCircle2 size={16} /> Up to Date!
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            {/* Manual Check for Updates Button */}
+            <button
+              className="btn-icon"
+              onClick={() => performUpdateCheck(true)}
+              title="Check for Updates"
+              disabled={isCheckingUpdate}
+            >
+              <RotateCw size={18} className={isCheckingUpdate ? 'status-spinner' : ''} />
+            </button>
+
             <button className="btn-icon" onClick={onExport} title="Export Configuration JSON">
               <Download size={18} />
             </button>
@@ -127,7 +175,7 @@ export default function HeaderNav({ activeTab, setActiveTab, onExport, onImport,
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3 className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--telemetry-cyan)' }}>
-                <Sparkles size={20} /> New Update Available: {updateInfo.latestVersion}
+                <Sparkles size={20} /> {updateInfo.updateAvailable ? `New Update Available: ${updateInfo.latestVersion}` : `ApexLaunch Sim Deck v${updateInfo.currentVersion}`}
               </h3>
               <button className="btn-icon" onClick={() => setIsUpdateModalOpen(false)}>
                 <X size={20} />
@@ -137,10 +185,10 @@ export default function HeaderNav({ activeTab, setActiveTab, onExport, onImport,
             <div className="modal-body">
               <div style={{ background: 'var(--bg-card)', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
                 <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
-                  A new version of <strong>ApexLaunch Sim Deck</strong> is ready for download!
+                  {updateInfo.updateAvailable ? 'A new update is available on GitHub!' : 'You are running the latest version of ApexLaunch Sim Deck.'}
                 </div>
                 <div style={{ fontSize: '0.8rem', fontFamily: 'var(--font-mono)', color: 'var(--telemetry-cyan)' }}>
-                  Current Version: v{updateInfo.currentVersion} → New Version: {updateInfo.latestVersion}
+                  Current Version: v{updateInfo.currentVersion} {updateInfo.updateAvailable && `→ New Version: ${updateInfo.latestVersion}`}
                 </div>
               </div>
 
@@ -154,18 +202,20 @@ export default function HeaderNav({ activeTab, setActiveTab, onExport, onImport,
 
             <div className="modal-footer">
               <button type="button" className="btn-primary" onClick={() => setIsUpdateModalOpen(false)}>
-                Later
+                Close
               </button>
 
-              <a
-                href={updateInfo.downloadUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="btn-primary"
-                style={{ background: 'linear-gradient(135deg, var(--telemetry-cyan), #4facfe)', color: '#000', border: 'none', fontWeight: 700, textDecoration: 'none' }}
-              >
-                <ExternalLink size={16} /> Download Update Package
-              </a>
+              {updateInfo.updateAvailable && (
+                <a
+                  href={updateInfo.downloadUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn-primary"
+                  style={{ background: 'linear-gradient(135deg, var(--telemetry-cyan), #4facfe)', color: '#000', border: 'none', fontWeight: 700, textDecoration: 'none' }}
+                >
+                  <ExternalLink size={16} /> Download Update Package
+                </a>
+              )}
             </div>
           </div>
         </div>

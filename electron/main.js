@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, Menu, shell } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { spawn, exec } from 'child_process';
@@ -34,6 +34,79 @@ function createWindow() {
   } else {
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
   }
+
+  setupNativeMenu();
+}
+
+function setupNativeMenu() {
+  const template = [
+    {
+      label: 'File',
+      submenu: [
+        { role: 'quit' }
+      ]
+    },
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' }
+      ]
+    },
+    {
+      label: 'View',
+      submenu: [
+        { role: 'reload' },
+        { role: 'forceReload' },
+        { role: 'toggleDevTools' },
+        { type: 'separator' },
+        { role: 'resetZoom' },
+        { role: 'zoomIn' },
+        { role: 'zoomOut' },
+        { type: 'separator' },
+        { role: 'togglefullscreen' }
+      ]
+    },
+    {
+      label: 'Help',
+      submenu: [
+        {
+          label: 'Check for Updates...',
+          click: async () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              const res = await checkGitHubUpdate();
+              mainWindow.webContents.send('app:manualUpdateResult', res);
+            }
+          }
+        },
+        { type: 'separator' },
+        {
+          label: 'GitHub Repository',
+          click: async () => {
+            await shell.openExternal('https://github.com/vincentdthe/apex-sim-deck');
+          }
+        },
+        {
+          label: 'About ApexLaunch Sim Deck',
+          click: () => {
+            dialog.showMessageBox(mainWindow, {
+              type: 'info',
+              title: 'About ApexLaunch Sim Deck',
+              message: `ApexLaunch Sim Deck v${CURRENT_VERSION}`,
+              detail: 'Modern Sim Racing & Flight Sim Launcher.\nCreated for automated multi-app launch chaining and profile management.'
+            });
+          }
+        }
+      ]
+    }
+  ];
+
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
 }
 
 app.whenReady().then(() => {
@@ -48,8 +121,8 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
 
-// Auto-Updater: Check GitHub Releases API for latest version
-ipcMain.handle('app:checkUpdate', async () => {
+// Helper function to check GitHub updates
+async function checkGitHubUpdate() {
   return new Promise((resolve) => {
     const options = {
       hostname: 'api.github.com',
@@ -81,23 +154,28 @@ ipcMain.handle('app:checkUpdate', async () => {
               releaseUrl: release.html_url
             });
           } else {
-            resolve({ success: false, currentVersion: CURRENT_VERSION, updateAvailable: false });
+            resolve({ success: false, currentVersion: CURRENT_VERSION, updateAvailable: false, message: 'Could not fetch release info.' });
           }
         } catch (e) {
-          resolve({ success: false, currentVersion: CURRENT_VERSION, updateAvailable: false });
+          resolve({ success: false, currentVersion: CURRENT_VERSION, updateAvailable: false, message: e.message });
         }
       });
     });
 
-    req.on('error', () => {
-      resolve({ success: false, currentVersion: CURRENT_VERSION, updateAvailable: false });
+    req.on('error', (err) => {
+      resolve({ success: false, currentVersion: CURRENT_VERSION, updateAvailable: false, message: err.message });
     });
 
     req.end();
   });
+}
+
+// Auto-Updater IPC Handler
+ipcMain.handle('app:checkUpdate', async () => {
+  return await checkGitHubUpdate();
 });
 
-// Helper function to compare semver strings (e.g. "1.0.2" vs "1.0.1")
+// Helper function to compare semver strings
 function compareVersions(v1, v2) {
   const p1 = (v1 || '').split('.').map(Number);
   const p2 = (v2 || '').split('.').map(Number);
@@ -222,7 +300,7 @@ ipcMain.handle('launch:runProfile', async (event, payload) => {
       const delayMs = (appItem.delay || 0) * 1000;
       if (delayMs > 0) {
         sendStatus(i, 'pending', `Waiting ${appItem.delay || 0}s before starting ${appItem.name}...`);
-        await new Promise((resolve) => setTimeout(resolve, delayMs));
+        await new Promise((resolve) => setTimeout(resolve, resolve));
       }
 
       const ext = path.extname(appItem.exePath).toLowerCase();
