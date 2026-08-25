@@ -145,7 +145,20 @@ export default function HeaderNav({ activeTab, setActiveTab, onExport, onImport,
           )}
 
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            {/* Manual Check for Updates Button */}
+            <button className="btn-icon" onClick={onExport} title="Export Configuration JSON">
+              <Download size={18} />
+            </button>
+            
+            <label className="btn-icon" title="Import Configuration JSON" style={{ cursor: 'pointer' }}>
+              <Upload size={18} />
+              <input type="file" accept=".json" onChange={handleImportFile} style={{ display: 'none' }} />
+            </label>
+            
+            <button className="btn-icon" onClick={onReset} title="Reset to Preset Defaults">
+              <RefreshCw size={18} />
+            </button>
+
+            {/* Manual Check for Updates Button (Far Right) */}
             <button
               className="btn-icon"
               onClick={() => performUpdateCheck(true)}
@@ -153,17 +166,6 @@ export default function HeaderNav({ activeTab, setActiveTab, onExport, onImport,
               disabled={isCheckingUpdate}
             >
               <RotateCw size={18} className={isCheckingUpdate ? 'status-spinner' : ''} />
-            </button>
-
-            <button className="btn-icon" onClick={onExport} title="Export Configuration JSON">
-              <Download size={18} />
-            </button>
-            <label className="btn-icon" title="Import Configuration JSON" style={{ cursor: 'pointer' }}>
-              <Upload size={18} />
-              <input type="file" accept=".json" onChange={handleImportFile} style={{ display: 'none' }} />
-            </label>
-            <button className="btn-icon" onClick={onReset} title="Reset to Preset Defaults">
-              <RefreshCw size={18} />
             </button>
           </div>
         </div>
