@@ -1,49 +1,31 @@
 import { INITIAL_APPS, INITIAL_GAMES } from '../data/initialData';
 
-const PRIMARY_APPS_KEY = 'apex_sim_deck_apps_v2';
-const PRIMARY_GAMES_KEY = 'apex_sim_deck_games_v2';
+const PRIMARY_APPS_KEY = 'apex_sim_deck_apps_v4';
+const PRIMARY_GAMES_KEY = 'apex_sim_deck_games_v4';
 
-const LEGACY_APP_KEYS = [
-  'apex_sim_deck_user_apps_v1',
-  'apex_sim_deck_apps_v7',
-  'apex_sim_deck_apps_v6',
-  'apex_sim_deck_apps_v5',
-  'apex_sim_deck_apps_custom',
-  'apex_sim_deck_apps'
-];
-
-const LEGACY_GAME_KEYS = [
-  'apex_sim_deck_user_games_v1',
-  'apex_sim_deck_games_v7',
-  'apex_sim_deck_games_v6',
-  'apex_sim_deck_games_v5',
-  'apex_sim_deck_games_custom',
-  'apex_sim_deck_games'
-];
+function isOutdated(apps) {
+  if (!Array.isArray(apps) || apps.length === 0) return true;
+  // If legacy outdated paths/names exist, force refresh to new initial data
+  return apps.some(
+    (a) =>
+      (a.exePath && a.exePath.includes('SimTools')) ||
+      (a.name && a.name.includes('FanaLab')) ||
+      (a.exePath && a.exePath.includes('Britton IT Ltd\\Crew Chief V4\\CrewChiefV4.exe')) ||
+      (a.exePath && a.exePath.includes('MOZA Cockpit\\MOZACockpit.exe'))
+  );
+}
 
 export function loadApps() {
   try {
     const raw = localStorage.getItem(PRIMARY_APPS_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-
-    // Check legacy storage keys if present
-    for (const key of LEGACY_APP_KEYS) {
-      const legacyRaw = localStorage.getItem(key);
-      if (legacyRaw) {
-        try {
-          const parsed = JSON.parse(legacyRaw);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            localStorage.setItem(PRIMARY_APPS_KEY, legacyRaw);
-            return parsed;
-          }
-        } catch (e) {}
+      if (Array.isArray(parsed) && parsed.length > 0 && !isOutdated(parsed)) {
+        return parsed;
       }
     }
 
-    // Fallback to exact user default presets
+    // Initialize with exact user configuration
     localStorage.setItem(PRIMARY_APPS_KEY, JSON.stringify(INITIAL_APPS));
     return INITIAL_APPS;
   } catch (e) {
@@ -68,21 +50,6 @@ export function loadGames() {
       if (Array.isArray(parsed) && parsed.length > 0) return parsed;
     }
 
-    // Check legacy storage keys if present
-    for (const key of LEGACY_GAME_KEYS) {
-      const legacyRaw = localStorage.getItem(key);
-      if (legacyRaw) {
-        try {
-          const parsed = JSON.parse(legacyRaw);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            localStorage.setItem(PRIMARY_GAMES_KEY, legacyRaw);
-            return parsed;
-          }
-        } catch (e) {}
-      }
-    }
-
-    // Fallback to exact user default presets
     localStorage.setItem(PRIMARY_GAMES_KEY, JSON.stringify(INITIAL_GAMES));
     return INITIAL_GAMES;
   } catch (e) {
