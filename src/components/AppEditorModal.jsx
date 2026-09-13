@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, FolderOpen, CheckSquare } from 'lucide-react';
+import { selectExe } from '../utils/platformApi';
 
 export default function AppEditorModal({ app, onSave, onClose }) {
   const [formData, setFormData] = useState({
@@ -16,16 +17,9 @@ export default function AppEditorModal({ app, onSave, onClose }) {
   });
 
   const handleBrowseExe = async () => {
-    if (window.electronAPI?.selectExe) {
-      const selected = await window.electronAPI.selectExe();
-      if (selected) {
-        setFormData((prev) => ({ ...prev, exePath: selected }));
-      }
-    } else {
-      const pathPrompt = prompt('Enter executable full path:', formData.exePath);
-      if (pathPrompt !== null) {
-        setFormData((prev) => ({ ...prev, exePath: pathPrompt }));
-      }
+    const selected = await selectExe();
+    if (selected) {
+      setFormData((prev) => ({ ...prev, exePath: selected }));
     }
   };
 
@@ -56,7 +50,7 @@ export default function AppEditorModal({ app, onSave, onClose }) {
               <input
                 type="text"
                 className="form-input"
-                placeholder="e.g. Moza Cockpit, Fanatec FanaLab, VoiceAttack"
+                placeholder="e.g. Moza Cockpit, VoiceAttack, VR Core Optimizer"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
@@ -99,13 +93,13 @@ export default function AppEditorModal({ app, onSave, onClose }) {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Executable File Path (.exe)</label>
+              <label className="form-label">Executable File or Script Path (.exe, .ps1, .bat)</label>
               <div className="input-with-button">
                 <input
                   type="text"
                   className="form-input"
                   style={{ fontFamily: 'var(--font-mono)' }}
-                  placeholder="C:\Program Files\App\App.exe"
+                  placeholder="C:\Program Files\App\App.exe or C:\Scripts\Optimize.ps1"
                   value={formData.exePath}
                   onChange={(e) => setFormData({ ...formData, exePath: e.target.value })}
                 />

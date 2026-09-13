@@ -8,6 +8,7 @@ import GameModal from './components/AppModal';
 import AppEditorModal from './components/AppEditorModal';
 import LaunchConsole from './components/LaunchConsole';
 import { loadApps, saveApps, loadGames, saveGames, exportConfig, resetToDefaults } from './utils/storage';
+import { launchProfile, onLaunchStatus, platform } from './utils/platformApi';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('racing'); // 'racing' | 'flight' | 'utilities' | 'settings'
@@ -33,26 +34,24 @@ export default function App() {
     saveGames(games);
   }, [games]);
 
-  // Subscribe to IPC launch status updates from Electron main process
+  // Subscribe to native launch status updates from Tauri/Electron backend
   useEffect(() => {
-    if (window.electronAPI?.onLaunchStatus) {
-      const unsubscribe = window.electronAPI.onLaunchStatus((data) => {
-        const { stepIndex, status, message, pid } = data;
-        setLaunchStatusSteps((prevSteps) => {
-          const updated = [...prevSteps];
-          if (updated[stepIndex]) {
-            updated[stepIndex] = {
-              ...updated[stepIndex],
-              status,
-              message,
-              pid: pid || updated[stepIndex].pid
-            };
-          }
-          return updated;
-        });
+    const unsubscribe = onLaunchStatus((data) => {
+      const { stepIndex, status, message, pid } = data;
+      setLaunchStatusSteps((prevSteps) => {
+        const updated = [...prevSteps];
+        if (updated[stepIndex]) {
+          updated[stepIndex] = {
+            ...updated[stepIndex],
+            status,
+            message,
+            pid: pid || updated[stepIndex].pid
+          };
+        }
+        return updated;
       });
-      return () => unsubscribe();
-    }
+    });
+    return () => unsubscribe();
   }, []);
 
   // --- APP MANAGERS ---
@@ -139,8 +138,8 @@ export default function App() {
     setLaunchStatusSteps([{ name: app.name, status: 'pending', message: 'Launching utility app...' }]);
     setIsConsoleVisible(true);
 
-    if (window.electronAPI?.launchProfile) {
-      await window.electronAPI.launchProfile(payload);
+    if (platform !== 'web') {
+      await launchProfile(payload);
     } else {
       setLaunchStatusSteps([{ name: app.name, status: 'completed', message: `Simulated launch of ${app.name} [OK]` }]);
     }
@@ -197,15 +196,15 @@ export default function App() {
       companionApps: companionAppsToRun
     };
 
-    if (window.electronAPI?.launchProfile) {
-      await window.electronAPI.launchProfile(payload);
+    if (platform !== 'web') {
+      await launchProfile(payload);
     } else {
       for (let i = 0; i < companionAppsToRun.length; i++) {
         const app = companionAppsToRun[i];
         setLaunchStatusSteps((prev) =>
           prev.map((s, idx) => (idx === i ? { ...s, status: 'running', message: `Starting ${app.name}...` } : s))
         );
-        await new Promise((r) => setTimeout(r, 1200));
+        await new Promise((r) => setTimeout(r, 1000));
         setLaunchStatusSteps((prev) =>
           prev.map((s, idx) => (idx === i ? { ...s, status: 'completed', message: `Started ${app.name} [SIM OK]` } : s))
         );

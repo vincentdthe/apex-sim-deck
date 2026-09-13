@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Flag, Plane, AppWindow, Settings, Download, Upload, RefreshCw, Gauge, Sparkles, ExternalLink, X, RotateCw, CheckCircle2 } from 'lucide-react';
+import { checkUpdate, onManualUpdateTrigger, platform } from '../utils/platformApi';
 
 export default function HeaderNav({ activeTab, setActiveTab, onExport, onImport, onReset }) {
   const [updateInfo, setUpdateInfo] = useState(null);
@@ -8,42 +9,38 @@ export default function HeaderNav({ activeTab, setActiveTab, onExport, onImport,
   const [upToDateNotice, setUpToDateNotice] = useState(false);
 
   const performUpdateCheck = async (isManual = false) => {
-    if (window.electronAPI?.checkUpdate) {
-      if (isManual) setIsCheckingUpdate(true);
-      const res = await window.electronAPI.checkUpdate();
-      if (isManual) setIsCheckingUpdate(false);
+    if (isManual) setIsCheckingUpdate(true);
+    const res = await checkUpdate();
+    if (isManual) setIsCheckingUpdate(false);
 
-      if (res && res.success) {
-        setUpdateInfo(res);
-        if (res.updateAvailable) {
-          setIsUpdateModalOpen(true);
-        } else if (isManual) {
-          setUpToDateNotice(true);
-          setTimeout(() => setUpToDateNotice(false), 4000);
-        }
+    if (res && res.success) {
+      setUpdateInfo(res);
+      if (res.updateAvailable) {
+        setIsUpdateModalOpen(true);
       } else if (isManual) {
-        alert('Could not connect to update server.');
+        setUpToDateNotice(true);
+        setTimeout(() => setUpToDateNotice(false), 4000);
       }
+    } else if (isManual) {
+      alert('Could not connect to update server.');
     }
   };
 
   useEffect(() => {
     performUpdateCheck(false);
 
-    if (window.electronAPI?.onManualUpdateResult) {
-      const unsubscribe = window.electronAPI.onManualUpdateResult((res) => {
-        if (res && res.success) {
-          setUpdateInfo(res);
-          if (res.updateAvailable) {
-            setIsUpdateModalOpen(true);
-          } else {
-            setUpToDateNotice(true);
-            setTimeout(() => setUpToDateNotice(false), 4000);
-          }
+    const unsubscribe = onManualUpdateTrigger((res) => {
+      if (res && res.success) {
+        setUpdateInfo(res);
+        if (res.updateAvailable) {
+          setIsUpdateModalOpen(true);
+        } else {
+          setUpToDateNotice(true);
+          setTimeout(() => setUpToDateNotice(false), 4000);
         }
-      });
-      return () => unsubscribe();
-    }
+      }
+    });
+    return () => unsubscribe();
   }, []);
 
   const handleImportFile = (e) => {
@@ -77,7 +74,7 @@ export default function HeaderNav({ activeTab, setActiveTab, onExport, onImport,
               ApexLaunch <span style={{ color: 'var(--telemetry-cyan)', fontWeight: 400 }}>Sim Deck</span>
             </div>
             <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>
-              v{updateInfo?.currentVersion || '1.0.1'}
+              v{updateInfo?.currentVersion || '1.0.1'} ({platform.toUpperCase()})
             </div>
           </div>
         </div>
@@ -158,7 +155,7 @@ export default function HeaderNav({ activeTab, setActiveTab, onExport, onImport,
               <RefreshCw size={18} />
             </button>
 
-            {/* Manual Check for Updates Button (Far Right) */}
+            {/* Manual Check for Updates Button */}
             <button
               className="btn-icon"
               onClick={() => performUpdateCheck(true)}

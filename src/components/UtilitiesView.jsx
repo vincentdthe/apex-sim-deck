@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Play, Search, Terminal, FolderOpen, Edit2 } from 'lucide-react';
+import { checkRunning } from '../utils/platformApi';
 
 export default function UtilitiesView({ apps, onLaunchApp, onEditApp }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -8,11 +9,10 @@ export default function UtilitiesView({ apps, onLaunchApp, onEditApp }) {
 
   // Check process running status for all apps on Windows
   const checkAllAppsRunning = async () => {
-    if (!window.electronAPI?.checkRunning) return;
     const states = {};
     for (const app of apps) {
       if (app.exePath) {
-        states[app.id] = await window.electronAPI.checkRunning(app.exePath);
+        states[app.id] = await checkRunning(app.exePath);
       }
     }
     setRunningStates(states);

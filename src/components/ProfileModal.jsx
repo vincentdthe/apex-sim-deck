@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Check, FolderOpen, Glasses, Monitor, Clock, Terminal, Edit2 } from 'lucide-react';
+import { selectExe } from '../utils/platformApi';
 
 export default function ProfileModal({
   gameId,
@@ -26,13 +27,8 @@ export default function ProfileModal({
   });
 
   const handleBrowseExe = async () => {
-    if (window.electronAPI?.selectExe) {
-      const selected = await window.electronAPI.selectExe();
-      if (selected) setExePath(selected);
-    } else {
-      const pathPrompt = prompt('Enter Game Executable Path:', exePath);
-      if (pathPrompt !== null) setExePath(pathPrompt);
-    }
+    const selected = await selectExe();
+    if (selected) setExePath(selected);
   };
 
   const toggleAppId = (appId) => {
@@ -124,7 +120,7 @@ export default function ProfileModal({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Game Executable Path (.exe)</label>
+              <label className="form-label">Game Executable / Script Path (.exe, .ps1, .bat)</label>
               <div className="input-with-button">
                 <input
                   type="text"
@@ -178,7 +174,7 @@ export default function ProfileModal({
             <div className="form-group" style={{ marginTop: '0.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
                 <label className="form-label">
-                  Auto-Launch Companion Apps ({enabledAppIds.length} Selected)
+                  Auto-Launch Companion Apps & Optimization Scripts ({enabledAppIds.length} Selected)
                 </label>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
                   Filtered for {category === 'racing' ? '🏎️ Racing' : '✈️ Flight'} setup
