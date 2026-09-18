@@ -72,6 +72,54 @@ export const INITIAL_APPS = [
     }
   },
   {
+    id: "app-tinypedal",
+    name: "TinyPedal",
+    exePath: "C:\\Program Files\\TinyPedal\\tinypedal.exe",
+    args: "",
+    delay: 1,
+    autoKill: true,
+    categories: {
+      racing: true,
+      flight: false
+    }
+  },
+  {
+    id: "app-motec",
+    name: "MoTeC i2 Pro",
+    exePath: "C:\\Program Files (x86)\\MoTeC\\i2\\1.1\\i2.exe",
+    args: "",
+    delay: 1,
+    autoKill: false,
+    categories: {
+      racing: true,
+      flight: false
+    }
+  },
+  {
+    id: "app-lfm",
+    name: "Low Fuel Motorsport (LFM)",
+    exePath: "C:\\Users\\vince\\AppData\\Local\\Programs\\LowFuelMotorsport\\LowFuelMotorsport.exe",
+    args: "",
+    delay: 1,
+    autoKill: true,
+    categories: {
+      racing: true,
+      flight: false
+    }
+  },
+  {
+    id: "app-dlss-swapper",
+    name: "DLSS Swapper",
+    exePath: "C:\\Program Files\\DLSS Swapper\\DLSS Swapper.exe",
+    args: "",
+    delay: 0,
+    autoKill: false,
+    categories: {
+      racing: true,
+      flight: true
+    }
+  },
+  {
     id: "app-moza-cockpit",
     name: "Moza Cockpit (AB9 Flight Base)",
     exePath: "C:\\Program Files (x86)\\MOZA Cockpit\\MOZA Cockpit.exe",
@@ -238,7 +286,8 @@ export const INITIAL_GAMES = [
           "app-garage61",
           "app-bloops",
           "app-crewchief",
-          "app-1787686127381"
+          "app-1787686127381",
+          "app-tinypedal"
         ],
         appOverrides: {
           "app-crewchief": {
@@ -258,9 +307,61 @@ export const INITIAL_GAMES = [
           "app-track-titan",
           "app-garage61",
           "app-crewchief",
-          "app-trackir"
+          "app-trackir",
+          "app-tinypedal"
         ],
         appOverrides: {}
+      }
+    ]
+  },
+  {
+    id: "game-ac",
+    name: "Assetto Corsa",
+    category: "racing",
+    banner: "https://images.unsplash.com/photo-1542282088-72c9c27ed0cd?auto=format&fit=crop&w=800&q=80",
+    description: "Premier driving simulation powered by Content Manager and Custom Shaders Patch.",
+    profiles: [
+      {
+        id: "prof-ac-vr",
+        name: "Assetto Corsa VR Mode (Content Manager)",
+        isVr: true,
+        exePath: "C:\\Program Files (x86)\\Steam\\steamapps\\common\\assettocorsa\\Content Manager.exe",
+        args: "",
+        autoLaunchGame: true,
+        enabledAppIds: [
+          "app-fanatec",
+          "app-track-titan",
+          "app-crewchief",
+          "app-simhub",
+          "app-1787686127381",
+          "app-tinypedal"
+        ],
+        appOverrides: {
+          "app-crewchief": {
+            args: "-ac"
+          }
+        }
+      },
+      {
+        id: "prof-ac-2d",
+        name: "Assetto Corsa 2D Mode (Content Manager)",
+        isVr: false,
+        exePath: "C:\\Program Files (x86)\\Steam\\steamapps\\common\\assettocorsa\\Content Manager.exe",
+        args: "",
+        autoLaunchGame: true,
+        enabledAppIds: [
+          "app-fanatec",
+          "app-track-titan",
+          "app-crewchief",
+          "app-simhub",
+          "app-trackir",
+          "app-tinypedal"
+        ],
+        appOverrides: {
+          "app-crewchief": {
+            args: "-ac"
+          }
+        }
       }
     ]
   },
@@ -281,7 +382,8 @@ export const INITIAL_GAMES = [
         enabledAppIds: [
           "app-fanatec",
           "app-track-titan",
-          "app-crewchief"
+          "app-crewchief",
+          "app-tinypedal"
         ],
         appOverrides: {
           "app-crewchief": {
@@ -300,7 +402,8 @@ export const INITIAL_GAMES = [
           "app-fanatec",
           "app-track-titan",
           "app-crewchief",
-          "app-trackir"
+          "app-trackir",
+          "app-tinypedal"
         ],
         appOverrides: {}
       }

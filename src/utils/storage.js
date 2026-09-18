@@ -1,18 +1,14 @@
 import { INITIAL_APPS, INITIAL_GAMES } from '../data/initialData';
 
-const PRIMARY_APPS_KEY = 'apex_sim_deck_apps_v4';
-const PRIMARY_GAMES_KEY = 'apex_sim_deck_games_v4';
+const PRIMARY_APPS_KEY = 'apex_sim_deck_apps_v6';
+const PRIMARY_GAMES_KEY = 'apex_sim_deck_games_v6';
 
 function isOutdated(apps) {
   if (!Array.isArray(apps) || apps.length === 0) return true;
-  // If legacy outdated paths/names exist, force refresh to new initial data
-  return apps.some(
-    (a) =>
-      (a.exePath && a.exePath.includes('SimTools')) ||
-      (a.name && a.name.includes('FanaLab')) ||
-      (a.exePath && a.exePath.includes('Britton IT Ltd\\Crew Chief V4\\CrewChiefV4.exe')) ||
-      (a.exePath && a.exePath.includes('MOZA Cockpit\\MOZACockpit.exe'))
-  );
+  // If legacy outdated paths exist, or missing tinypedal/motec, force refresh to new initial data
+  const hasTinyPedal = apps.some(a => a.id === 'app-tinypedal');
+  const hasOutdatedPaths = apps.some(a => a.exePath && a.exePath.includes('SimTools'));
+  return !hasTinyPedal || hasOutdatedPaths;
 }
 
 export function loadApps() {
@@ -47,7 +43,9 @@ export function loadGames() {
     const raw = localStorage.getItem(PRIMARY_GAMES_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed) && parsed.length > 0 && parsed.some(g => g.id === 'game-ac')) {
+        return parsed;
+      }
     }
 
     localStorage.setItem(PRIMARY_GAMES_KEY, JSON.stringify(INITIAL_GAMES));
