@@ -242,6 +242,7 @@ ipcMain.handle('process:checkRunning', async (event, exePath) => {
 function spawnProcessOrScript(targetPath, rawArgs = '') {
   const ext = path.extname(targetPath).toLowerCase();
   const userArgs = rawArgs ? rawArgs.split(' ').filter(Boolean) : [];
+  const parentDir = path.dirname(targetPath);
 
   if (ext === '.ps1') {
     return spawn('powershell.exe', [
@@ -251,17 +252,29 @@ function spawnProcessOrScript(targetPath, rawArgs = '') {
       '-File',
       targetPath,
       ...userArgs
-    ], { detached: true, stdio: 'ignore' });
+    ], { 
+      cwd: parentDir,
+      detached: true, 
+      stdio: 'ignore',
+      windowsHide: true
+    });
   } else if (ext === '.bat' || ext === '.cmd') {
     return spawn('cmd.exe', [
       '/c',
       targetPath,
       ...userArgs
-    ], { detached: true, stdio: 'ignore' });
+    ], { 
+      cwd: parentDir,
+      detached: true, 
+      stdio: 'ignore',
+      windowsHide: true
+    });
   } else {
     return spawn(targetPath, userArgs, {
+      cwd: parentDir,
       detached: true,
-      stdio: 'ignore'
+      stdio: 'ignore',
+      windowsHide: false
     });
   }
 }
@@ -300,7 +313,7 @@ ipcMain.handle('launch:runProfile', async (event, payload) => {
       const delayMs = (appItem.delay || 0) * 1000;
       if (delayMs > 0) {
         sendStatus(i, 'pending', `Waiting ${appItem.delay || 0}s before starting ${appItem.name}...`);
-        await new Promise((resolve) => setTimeout(resolve, resolve));
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
       }
 
       const ext = path.extname(appItem.exePath).toLowerCase();
@@ -309,6 +322,10 @@ ipcMain.handle('launch:runProfile', async (event, payload) => {
 
       try {
         const child = spawnProcessOrScript(appItem.exePath, appItem.args);
+        child.on('error', (err) => {
+          console.error(`Process error for ${appItem.name}:`, err);
+          sendStatus(i, 'error', `Error launching ${appItem.name}: ${err.message}`);
+        });
         child.unref();
 
         if (child.pid) {
@@ -341,6 +358,10 @@ ipcMain.handle('launch:runProfile', async (event, payload) => {
     sendStatus(gameStepIndex, 'running', `Launching main game: ${gameName} (${profileName})...`);
 
     const gameProc = spawnProcessOrScript(gameExe, gameArgs);
+    gameProc.on('error', (err) => {
+      console.error(`Game process error for ${gameName}:`, err);
+      sendStatus(gameStepIndex, 'error', `Error launching ${gameName}: ${err.message}`);
+    });
 
     if (gameProc.pid) {
       gameProc.unref();

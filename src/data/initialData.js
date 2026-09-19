@@ -315,6 +315,49 @@ export const INITIAL_GAMES = [
     ]
   },
   {
+    id: "game-f1-25",
+    name: "F1 25",
+    category: "racing",
+    banner: "https://images.unsplash.com/photo-1574781330855-d0db8cc6a79c?auto=format&fit=crop&w=800&q=80",
+    description: "Official video game of the 2025 FIA Formula One World Championship.",
+    profiles: [
+      {
+        id: "prof-f1-vr",
+        name: "F1 25 VR Mode",
+        isVr: true,
+        exePath: "C:\\Program Files (x86)\\Steam\\steamapps\\common\\F1 25\\F1_25.exe",
+        args: "-vr",
+        autoLaunchGame: true,
+        enabledAppIds: [
+          "app-fanatec",
+          "app-track-titan",
+          "app-crewchief",
+          "app-simhub",
+          "app-1787686127381",
+          "app-tinypedal"
+        ],
+        appOverrides: {}
+      },
+      {
+        id: "prof-f1-2d",
+        name: "F1 25 2D Mode",
+        isVr: false,
+        exePath: "C:\\Program Files (x86)\\Steam\\steamapps\\common\\F1 25\\F1_25.exe",
+        args: "",
+        autoLaunchGame: true,
+        enabledAppIds: [
+          "app-fanatec",
+          "app-track-titan",
+          "app-crewchief",
+          "app-simhub",
+          "app-trackir",
+          "app-tinypedal"
+        ],
+        appOverrides: {}
+      }
+    ]
+  },
+  {
     id: "game-ac-evo",
     name: "Assetto Corsa EVO",
     category: "racing",

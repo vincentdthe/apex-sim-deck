@@ -84,9 +84,41 @@ fn check_running(exe_path: String) -> bool {
     }
 }
 
+// Native File Pickers
+#[tauri::command]
+async fn select_exe_dialog() -> Option<String> {
+    tokio::task::spawn_blocking(|| {
+        tauri::api::dialog::blocking::FileDialogBuilder::new()
+            .set_title("Select Executable or Script File")
+            .add_filter("Executables & Scripts (*.exe, *.ps1, *.bat, *.cmd)", &["exe", "ps1", "bat", "cmd"])
+            .add_filter("PowerShell Scripts (*.ps1)", &["ps1"])
+            .add_filter("Batch Files (*.bat, *.cmd)", &["bat", "cmd"])
+            .add_filter("All Files", &["*"])
+            .pick_file()
+            .map(|p| p.to_string_lossy().to_string())
+    })
+    .await
+    .unwrap_or(None)
+}
+
+#[tauri::command]
+async fn select_image_dialog() -> Option<String> {
+    tokio::task::spawn_blocking(|| {
+        tauri::api::dialog::blocking::FileDialogBuilder::new()
+            .set_title("Select Game Banner Image")
+            .add_filter("Image Files (*.png, *.jpg, *.jpeg, *.webp, *.bmp)", &["png", "jpg", "jpeg", "webp", "bmp"])
+            .add_filter("All Files", &["*"])
+            .pick_file()
+            .map(|p| p.to_string_lossy().to_string())
+    })
+    .await
+    .unwrap_or(None)
+}
+
 // Spawn process, batch file, or powershell script
 fn spawn_target(target_path: &str, raw_args: Option<&str>) -> std::io::Result<std::process::Child> {
     let path_obj = Path::new(target_path);
+    let parent_dir = path_obj.parent();
     let ext = path_obj
         .extension()
         .and_then(|s| s.to_str())
@@ -100,15 +132,24 @@ fn spawn_target(target_path: &str, raw_args: Option<&str>) -> std::io::Result<st
         let mut cmd = Command::new("powershell.exe");
         cmd.args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", target_path]);
         cmd.args(args_list);
+        if let Some(dir) = parent_dir {
+            cmd.current_dir(dir);
+        }
         cmd.spawn()
     } else if ext == "bat" || ext == "cmd" {
         let mut cmd = Command::new("cmd.exe");
         cmd.args(["/c", target_path]);
         cmd.args(args_list);
+        if let Some(dir) = parent_dir {
+            cmd.current_dir(dir);
+        }
         cmd.spawn()
     } else {
         let mut cmd = Command::new(target_path);
         cmd.args(args_list);
+        if let Some(dir) = parent_dir {
+            cmd.current_dir(dir);
+        }
         cmd.spawn()
     }
 }
@@ -371,7 +412,9 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             check_running,
             launch_profile,
-            check_update
+            check_update,
+            select_exe_dialog,
+            select_image_dialog
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

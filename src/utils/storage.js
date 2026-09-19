@@ -1,7 +1,7 @@
 import { INITIAL_APPS, INITIAL_GAMES } from '../data/initialData';
 
-const PRIMARY_APPS_KEY = 'apex_sim_deck_apps_v7';
-const PRIMARY_GAMES_KEY = 'apex_sim_deck_games_v7';
+const PRIMARY_APPS_KEY = 'apex_sim_deck_apps_v8';
+const PRIMARY_GAMES_KEY = 'apex_sim_deck_games_v8';
 
 function isOutdated(apps) {
   if (!Array.isArray(apps) || apps.length === 0) return true;
@@ -41,7 +41,7 @@ export function loadGames() {
     const raw = localStorage.getItem(PRIMARY_GAMES_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0 && parsed.some(g => g.id === 'game-ac-evo')) {
+      if (Array.isArray(parsed) && parsed.length > 0 && parsed.some(g => g.id === 'game-f1-25') && parsed.some(g => g.id === 'game-ac-evo')) {
         return parsed;
       }
     }

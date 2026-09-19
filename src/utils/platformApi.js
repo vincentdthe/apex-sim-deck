@@ -1,24 +1,50 @@
 // Unified Cross-Platform API Adapter (Supports both Tauri & Electron seamlessly)
 
-const isTauri = typeof window !== 'undefined' && Boolean(window.__TAURI__);
-const isElectron = typeof window !== 'undefined' && Boolean(window.electronAPI);
+export function getPlatform() {
+  if (typeof window !== 'undefined') {
+    if (window.__TAURI__ || window.__TAURI_IPC__ || window.__TAURI_METADATA__) return 'tauri';
+    if (window.electronAPI) return 'electron';
+  }
+  return 'web';
+}
 
-export const platform = isTauri ? 'tauri' : isElectron ? 'electron' : 'web';
+export const platform = getPlatform();
+
+async function invokeTauri(cmd, args = {}) {
+  if (window.__TAURI__?.invoke) {
+    return await window.__TAURI__.invoke(cmd, args);
+  }
+  if (window.__TAURI__?.tauri?.invoke) {
+    return await window.__TAURI__.tauri.invoke(cmd, args);
+  }
+  return null;
+}
 
 export async function selectExe() {
-  if (isTauri && window.__TAURI__?.dialog) {
-    const selected = await window.__TAURI__.dialog.open({
-      title: 'Select Executable or Script File',
-      filters: [
-        { name: 'Executables & Scripts (*.exe, *.ps1, *.bat, *.cmd)', extensions: ['exe', 'ps1', 'bat', 'cmd'] },
-        { name: 'All Files', extensions: ['*'] }
-      ],
-      multiple: false
-    });
-    return selected || null;
+  const currentPlatform = getPlatform();
+
+  if (currentPlatform === 'tauri') {
+    try {
+      const selected = await invokeTauri('select_exe_dialog');
+      if (selected) return selected;
+    } catch (e) {
+      console.warn('Tauri select_exe_dialog invoke failed, falling back to dialog API:', e);
+      if (window.__TAURI__?.dialog?.open) {
+        const fallback = await window.__TAURI__.dialog.open({
+          title: 'Select Executable or Script File',
+          filters: [
+            { name: 'Executables & Scripts (*.exe, *.ps1, *.bat, *.cmd)', extensions: ['exe', 'ps1', 'bat', 'cmd'] },
+            { name: 'All Files', extensions: ['*'] }
+          ],
+          multiple: false
+        });
+        if (fallback) return fallback;
+      }
+    }
+    return null;
   }
 
-  if (isElectron && window.electronAPI?.selectExe) {
+  if (currentPlatform === 'electron' && window.electronAPI?.selectExe) {
     return await window.electronAPI.selectExe();
   }
 
@@ -27,20 +53,32 @@ export async function selectExe() {
 }
 
 export async function selectImage() {
-  if (isTauri && window.__TAURI__?.dialog) {
-    const selected = await window.__TAURI__.dialog.open({
-      title: 'Select Game Banner Image',
-      filters: [
-        { name: 'Image Files (*.png, *.jpg, *.jpeg, *.webp, *.bmp)', extensions: ['png', 'jpg', 'jpeg', 'webp', 'bmp'] },
-        { name: 'All Files', extensions: ['*'] }
-      ],
-      multiple: false
-    });
-    if (!selected) return null;
-    return `asset://${selected}`;
+  const currentPlatform = getPlatform();
+
+  if (currentPlatform === 'tauri') {
+    try {
+      const selected = await invokeTauri('select_image_dialog');
+      if (selected) {
+        return `asset://${selected}`;
+      }
+    } catch (e) {
+      console.warn('Tauri select_image_dialog invoke failed, falling back to dialog API:', e);
+      if (window.__TAURI__?.dialog?.open) {
+        const fallback = await window.__TAURI__.dialog.open({
+          title: 'Select Game Banner Image',
+          filters: [
+            { name: 'Image Files (*.png, *.jpg, *.jpeg, *.webp, *.bmp)', extensions: ['png', 'jpg', 'jpeg', 'webp', 'bmp'] },
+            { name: 'All Files', extensions: ['*'] }
+          ],
+          multiple: false
+        });
+        if (fallback) return `asset://${fallback}`;
+      }
+    }
+    return null;
   }
 
-  if (isElectron && window.electronAPI?.selectImage) {
+  if (currentPlatform === 'electron' && window.electronAPI?.selectImage) {
     return await window.electronAPI.selectImage();
   }
 
@@ -50,12 +88,18 @@ export async function selectImage() {
 
 export async function checkRunning(exePath) {
   if (!exePath) return false;
+  const currentPlatform = getPlatform();
 
-  if (isTauri && window.__TAURI__?.invoke) {
-    return await window.__TAURI__.invoke('check_running', { exePath });
+  if (currentPlatform === 'tauri') {
+    try {
+      return await invokeTauri('check_running', { exePath });
+    } catch (e) {
+      console.error('Tauri check_running error:', e);
+      return false;
+    }
   }
 
-  if (isElectron && window.electronAPI?.checkRunning) {
+  if (currentPlatform === 'electron' && window.electronAPI?.checkRunning) {
     return await window.electronAPI.checkRunning(exePath);
   }
 
@@ -63,11 +107,18 @@ export async function checkRunning(exePath) {
 }
 
 export async function launchProfile(payload) {
-  if (isTauri && window.__TAURI__?.invoke) {
-    return await window.__TAURI__.invoke('launch_profile', { payload });
+  const currentPlatform = getPlatform();
+
+  if (currentPlatform === 'tauri') {
+    try {
+      return await invokeTauri('launch_profile', { payload });
+    } catch (e) {
+      console.error('Tauri launch_profile error:', e);
+      return { success: false, message: e?.toString() || 'Tauri launch error' };
+    }
   }
 
-  if (isElectron && window.electronAPI?.launchProfile) {
+  if (currentPlatform === 'electron' && window.electronAPI?.launchProfile) {
     return await window.electronAPI.launchProfile(payload);
   }
 
@@ -75,7 +126,9 @@ export async function launchProfile(payload) {
 }
 
 export function onLaunchStatus(callback) {
-  if (isTauri && window.__TAURI__?.event) {
+  const currentPlatform = getPlatform();
+
+  if (currentPlatform === 'tauri' && window.__TAURI__?.event) {
     let unlistenFn = null;
     window.__TAURI__.event.listen('launch:status', (event) => {
       callback(event.payload);
@@ -87,7 +140,7 @@ export function onLaunchStatus(callback) {
     };
   }
 
-  if (isElectron && window.electronAPI?.onLaunchStatus) {
+  if (currentPlatform === 'electron' && window.electronAPI?.onLaunchStatus) {
     return window.electronAPI.onLaunchStatus(callback);
   }
 
@@ -95,15 +148,17 @@ export function onLaunchStatus(callback) {
 }
 
 export async function checkUpdate() {
-  if (isTauri && window.__TAURI__?.invoke) {
+  const currentPlatform = getPlatform();
+
+  if (currentPlatform === 'tauri') {
     try {
-      return await window.__TAURI__.invoke('check_update');
+      return await invokeTauri('check_update');
     } catch (e) {
       return { success: false, updateAvailable: false, currentVersion: '1.0.1' };
     }
   }
 
-  if (isElectron && window.electronAPI?.checkUpdate) {
+  if (currentPlatform === 'electron' && window.electronAPI?.checkUpdate) {
     return await window.electronAPI.checkUpdate();
   }
 
@@ -111,7 +166,9 @@ export async function checkUpdate() {
 }
 
 export function onManualUpdateTrigger(callback) {
-  if (isTauri && window.__TAURI__?.event) {
+  const currentPlatform = getPlatform();
+
+  if (currentPlatform === 'tauri' && window.__TAURI__?.event) {
     let unlistenFn = null;
     window.__TAURI__.event.listen('app:manualUpdateTrigger', async () => {
       const res = await checkUpdate();
@@ -124,7 +181,7 @@ export function onManualUpdateTrigger(callback) {
     };
   }
 
-  if (isElectron && window.electronAPI?.onManualUpdateResult) {
+  if (currentPlatform === 'electron' && window.electronAPI?.onManualUpdateResult) {
     return window.electronAPI.onManualUpdateResult(callback);
   }
 
