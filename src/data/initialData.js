@@ -315,6 +315,49 @@ export const INITIAL_GAMES = [
     ]
   },
   {
+    id: "game-ac-evo",
+    name: "Assetto Corsa EVO",
+    category: "racing",
+    banner: "https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&w=800&q=80",
+    description: "Next-generation driving simulation featuring dynamic physics and photorealistic visuals.",
+    profiles: [
+      {
+        id: "prof-ace-vr",
+        name: "AC EVO VR Mode",
+        isVr: true,
+        exePath: "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Assetto Corsa EVO\\AssettoCorsaEVO.exe",
+        args: "-vr",
+        autoLaunchGame: true,
+        enabledAppIds: [
+          "app-fanatec",
+          "app-track-titan",
+          "app-crewchief",
+          "app-simhub",
+          "app-1787686127381",
+          "app-tinypedal"
+        ],
+        appOverrides: {}
+      },
+      {
+        id: "prof-ace-2d",
+        name: "AC EVO 2D Mode",
+        isVr: false,
+        exePath: "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Assetto Corsa EVO\\AssettoCorsaEVO.exe",
+        args: "",
+        autoLaunchGame: true,
+        enabledAppIds: [
+          "app-fanatec",
+          "app-track-titan",
+          "app-crewchief",
+          "app-simhub",
+          "app-trackir",
+          "app-tinypedal"
+        ],
+        appOverrides: {}
+      }
+    ]
+  },
+  {
     id: "game-ac",
     name: "Assetto Corsa",
     category: "racing",

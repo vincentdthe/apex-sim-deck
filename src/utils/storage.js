@@ -1,11 +1,10 @@
 import { INITIAL_APPS, INITIAL_GAMES } from '../data/initialData';
 
-const PRIMARY_APPS_KEY = 'apex_sim_deck_apps_v6';
-const PRIMARY_GAMES_KEY = 'apex_sim_deck_games_v6';
+const PRIMARY_APPS_KEY = 'apex_sim_deck_apps_v7';
+const PRIMARY_GAMES_KEY = 'apex_sim_deck_games_v7';
 
 function isOutdated(apps) {
   if (!Array.isArray(apps) || apps.length === 0) return true;
-  // If legacy outdated paths exist, or missing tinypedal/motec, force refresh to new initial data
   const hasTinyPedal = apps.some(a => a.id === 'app-tinypedal');
   const hasOutdatedPaths = apps.some(a => a.exePath && a.exePath.includes('SimTools'));
   return !hasTinyPedal || hasOutdatedPaths;
@@ -21,7 +20,6 @@ export function loadApps() {
       }
     }
 
-    // Initialize with exact user configuration
     localStorage.setItem(PRIMARY_APPS_KEY, JSON.stringify(INITIAL_APPS));
     return INITIAL_APPS;
   } catch (e) {
@@ -43,7 +41,7 @@ export function loadGames() {
     const raw = localStorage.getItem(PRIMARY_GAMES_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0 && parsed.some(g => g.id === 'game-ac')) {
+      if (Array.isArray(parsed) && parsed.length > 0 && parsed.some(g => g.id === 'game-ac-evo')) {
         return parsed;
       }
     }
