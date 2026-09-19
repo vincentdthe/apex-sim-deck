@@ -286,8 +286,7 @@ export const INITIAL_GAMES = [
           "app-garage61",
           "app-bloops",
           "app-crewchief",
-          "app-1787686127381",
-          "app-tinypedal"
+          "app-1787686127381"
         ],
         appOverrides: {
           "app-crewchief": {
@@ -307,8 +306,7 @@ export const INITIAL_GAMES = [
           "app-track-titan",
           "app-garage61",
           "app-crewchief",
-          "app-trackir",
-          "app-tinypedal"
+          "app-trackir"
         ],
         appOverrides: {}
       }
@@ -333,8 +331,7 @@ export const INITIAL_GAMES = [
           "app-track-titan",
           "app-crewchief",
           "app-simhub",
-          "app-1787686127381",
-          "app-tinypedal"
+          "app-1787686127381"
         ],
         appOverrides: {}
       },
@@ -350,8 +347,7 @@ export const INITIAL_GAMES = [
           "app-track-titan",
           "app-crewchief",
           "app-simhub",
-          "app-trackir",
-          "app-tinypedal"
+          "app-trackir"
         ],
         appOverrides: {}
       }
@@ -376,8 +372,7 @@ export const INITIAL_GAMES = [
           "app-track-titan",
           "app-crewchief",
           "app-simhub",
-          "app-1787686127381",
-          "app-tinypedal"
+          "app-1787686127381"
         ],
         appOverrides: {}
       },
@@ -393,8 +388,7 @@ export const INITIAL_GAMES = [
           "app-track-titan",
           "app-crewchief",
           "app-simhub",
-          "app-trackir",
-          "app-tinypedal"
+          "app-trackir"
         ],
         appOverrides: {}
       }
@@ -419,8 +413,7 @@ export const INITIAL_GAMES = [
           "app-track-titan",
           "app-crewchief",
           "app-simhub",
-          "app-1787686127381",
-          "app-tinypedal"
+          "app-1787686127381"
         ],
         appOverrides: {
           "app-crewchief": {
@@ -440,8 +433,7 @@ export const INITIAL_GAMES = [
           "app-track-titan",
           "app-crewchief",
           "app-simhub",
-          "app-trackir",
-          "app-tinypedal"
+          "app-trackir"
         ],
         appOverrides: {
           "app-crewchief": {

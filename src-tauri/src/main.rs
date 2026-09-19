@@ -68,17 +68,21 @@ fn check_running(exe_path: String) -> bool {
     }
     let path_obj = Path::new(&exe_path);
     let file_name = match path_obj.file_name() {
-        Some(name) => name.to_string_lossy().to_string(),
+        Some(name) => name.to_string_lossy().to_lowercase(),
         None => return false,
+    };
+    let file_stem = match path_obj.file_stem() {
+        Some(stem) => stem.to_string_lossy().to_lowercase(),
+        None => "".to_string(),
     };
 
     let output = Command::new("tasklist")
-        .args(["/FI", &format!("IMAGENAME eq {}", file_name), "/NH"])
+        .args(["/FO", "CSV", "/NH"])
         .output();
 
     if let Ok(out) = output {
         let stdout = String::from_utf8_lossy(&out.stdout).to_lowercase();
-        stdout.contains(&file_name.to_lowercase())
+        stdout.contains(&file_name) || (!file_stem.is_empty() && file_stem.len() > 3 && stdout.contains(&file_stem))
     } else {
         false
     }
@@ -176,13 +180,26 @@ async fn launch_profile(window: Window, payload: LaunchPayload) -> Result<bool, 
             }
         };
 
+        if !Path::new(exe).exists() {
+            let _ = window.emit(
+                "launch:status",
+                StatusUpdate {
+                    step_index: i,
+                    status: "error".into(),
+                    message: format!("File not found on disk: \"{}\". Please edit path in Settings.", exe),
+                    pid: None,
+                },
+            );
+            continue;
+        }
+
         if check_running(exe.clone()) {
             let _ = window.emit(
                 "launch:status",
                 StatusUpdate {
                     step_index: i,
                     status: "already_running".into(),
-                    message: format!("{} is already running. Skipping duplicate launch.", app.name),
+                    message: format!("{} is already running on your PC. Skipping duplicate launch.", app.name),
                     pid: None,
                 },
             );
@@ -244,6 +261,20 @@ async fn launch_profile(window: Window, payload: LaunchPayload) -> Result<bool, 
     if let Some(game_exe) = payload.game_exe {
         if !game_exe.trim().is_empty() {
             let game_step = apps.len();
+
+            if !Path::new(&game_exe).exists() {
+                let _ = window.emit(
+                    "launch:status",
+                    StatusUpdate {
+                        step_index: game_step,
+                        status: "error".into(),
+                        message: format!("Game executable not found on disk: \"{}\". Please check path.", game_exe),
+                        pid: None,
+                    },
+                );
+                return Ok(true);
+            }
+
             if check_running(game_exe.clone()) {
                 let _ = window.emit(
                     "launch:status",

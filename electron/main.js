@@ -1,9 +1,14 @@
 import { app, BrowserWindow, ipcMain, dialog, Menu, shell } from 'electron';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { spawn, exec } from 'child_process';
 import util from 'util';
 import https from 'https';
+
+process.on('uncaughtException', (err) => {
+  console.error('Electron uncaught exception:', err);
+});
 
 const execPromise = util.promisify(exec);
 const __filename = fileURLToPath(import.meta.url);
@@ -222,13 +227,15 @@ ipcMain.handle('dialog:selectImage', async () => {
 // Check if a process is already running on Windows
 async function isProcessRunning(targetPath) {
   if (!targetPath) return false;
-  const ext = path.extname(targetPath).toLowerCase();
-  const fileName = path.basename(targetPath);
-  const exeName = (ext === '.ps1' || ext === '.bat' || ext === '.cmd') ? fileName : path.basename(targetPath);
+  const fileName = path.basename(targetPath).toLowerCase();
+  const baseNameNoExt = path.basename(targetPath, path.extname(targetPath)).toLowerCase();
 
   try {
-    const { stdout } = await execPromise(`tasklist /FI "IMAGENAME eq ${exeName}" /NH`);
-    return stdout.toLowerCase().includes(exeName.toLowerCase());
+    const { stdout } = await execPromise('tasklist /FO CSV /NH');
+    const lowerOutput = stdout.toLowerCase();
+    return lowerOutput.includes(`"${fileName}"`) || 
+           lowerOutput.includes(fileName) ||
+           (baseNameNoExt.length > 3 && lowerOutput.includes(baseNameNoExt));
   } catch (e) {
     return false;
   }
@@ -304,6 +311,11 @@ ipcMain.handle('launch:runProfile', async (event, payload) => {
         continue;
       }
 
+      if (!fs.existsSync(appItem.exePath)) {
+        sendStatus(i, 'error', `File not found on disk: "${appItem.exePath}". Please edit path in Settings.`);
+        continue;
+      }
+
       const alreadyRunning = await isProcessRunning(appItem.exePath);
       if (alreadyRunning) {
         sendStatus(i, 'already_running', `${appItem.name} is already running on your PC. Skipping duplicate launch.`);
@@ -348,6 +360,11 @@ ipcMain.handle('launch:runProfile', async (event, payload) => {
     }
 
     const gameStepIndex = companionApps.length;
+
+    if (!fs.existsSync(gameExe)) {
+      sendStatus(gameStepIndex, 'error', `Game executable not found on disk: "${gameExe}". Please check path.`);
+      return { success: false, error: 'Game executable not found on disk' };
+    }
 
     const gameAlreadyRunning = await isProcessRunning(gameExe);
     if (gameAlreadyRunning) {
