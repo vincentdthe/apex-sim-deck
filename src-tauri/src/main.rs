@@ -60,7 +60,7 @@ pub struct UpdateResponse {
     pub release_url: String,
 }
 
-// Check if a process is already running on Windows
+// Check if a process is already running on Windows (Exact process name match)
 #[tauri::command]
 fn check_running(exe_path: String) -> bool {
     if exe_path.trim().is_empty() {
@@ -71,18 +71,26 @@ fn check_running(exe_path: String) -> bool {
         Some(name) => name.to_string_lossy().to_lowercase(),
         None => return false,
     };
-    let file_stem = match path_obj.file_stem() {
-        Some(stem) => stem.to_string_lossy().to_lowercase(),
-        None => "".to_string(),
-    };
+    let truncated_name: String = file_name.chars().take(25).collect();
 
     let output = Command::new("tasklist")
         .args(["/FO", "CSV", "/NH"])
         .output();
 
     if let Ok(out) = output {
-        let stdout = String::from_utf8_lossy(&out.stdout).to_lowercase();
-        stdout.contains(&file_name) || (!file_stem.is_empty() && file_stem.len() > 3 && stdout.contains(&file_stem))
+        let stdout = String::from_utf8_lossy(&out.stdout);
+        for line in stdout.lines() {
+            let trimmed = line.trim();
+            if trimmed.starts_with('"') {
+                if let Some(end_quote) = trimmed[1..].find('"') {
+                    let running_image = trimmed[1..=end_quote].to_lowercase();
+                    if running_image == file_name || running_image == truncated_name {
+                        return true;
+                    }
+                }
+            }
+        }
+        false
     } else {
         false
     }

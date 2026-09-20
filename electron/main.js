@@ -228,18 +228,25 @@ ipcMain.handle('dialog:selectImage', async () => {
   return `file:///${filePath.replace(/\\/g, '/')}`;
 });
 
-// Check if a process is already running on Windows
+// Check if a process is already running on Windows (Exact process name match)
 async function isProcessRunning(targetPath) {
   if (!targetPath) return false;
   const fileName = path.basename(targetPath).toLowerCase();
-  const baseNameNoExt = path.basename(targetPath, path.extname(targetPath)).toLowerCase();
+  const truncatedName = fileName.slice(0, 25);
 
   try {
     const { stdout } = await execPromise('tasklist /FO CSV /NH');
-    const lowerOutput = stdout.toLowerCase();
-    return lowerOutput.includes(`"${fileName}"`) || 
-           lowerOutput.includes(fileName) ||
-           (baseNameNoExt.length > 3 && lowerOutput.includes(baseNameNoExt));
+    const lines = stdout.split(/\r?\n/);
+    for (const line of lines) {
+      const match = line.match(/^"([^"]+)"/);
+      if (match) {
+        const runningImage = match[1].toLowerCase();
+        if (runningImage === fileName || runningImage === truncatedName) {
+          return true;
+        }
+      }
+    }
+    return false;
   } catch (e) {
     return false;
   }
