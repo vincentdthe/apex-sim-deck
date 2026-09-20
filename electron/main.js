@@ -19,6 +19,7 @@ let mainWindow;
 
 function createWindow() {
   const preloadPath = path.join(__dirname, 'preload.cjs');
+  const iconPath = path.join(__dirname, '../build/icon.ico');
 
   mainWindow = new BrowserWindow({
     width: 1280,
@@ -27,10 +28,13 @@ function createWindow() {
     minHeight: 700,
     backgroundColor: '#0a0d14',
     title: 'ApexLaunch Sim Deck',
+    icon: fs.existsSync(iconPath) ? iconPath : undefined,
     webPreferences: {
       preload: preloadPath,
       nodeIntegration: false,
-      contextIsolation: true
+      contextIsolation: true,
+      webSecurity: false,
+      allowRunningInsecureContent: true
     }
   });
 

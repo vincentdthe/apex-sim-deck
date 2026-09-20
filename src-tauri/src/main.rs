@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::path::Path;
 use std::process::Command;
 use std::time::Duration;
-use tauri::{CustomMenuItem, Menu, MenuItem, Submenu, Window};
+use tauri::{CustomMenuItem, Manager, Menu, MenuItem, Submenu, Window};
 
 const CURRENT_VERSION: &str = "1.0.1";
 
