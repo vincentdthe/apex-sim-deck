@@ -272,6 +272,12 @@ export const INITIAL_GAMES = [
     category: "racing",
     banner: "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=800&q=80",
     description: "Premier online motorsport simulation platform.",
+    sessionProcesses: [
+      "iRacingSim64DX11.exe",
+      "iRacingSim64.exe",
+      "iRacingSim64AVX2.exe",
+      "iRacingSim.exe"
+    ],
     profiles: [
       {
         id: "prof-iracing-vr",
@@ -318,6 +324,11 @@ export const INITIAL_GAMES = [
     category: "racing",
     banner: "https://images.unsplash.com/photo-1574781330855-d0db8cc6a79c?auto=format&fit=crop&w=800&q=80",
     description: "Official video game of the 2025 FIA Formula One World Championship.",
+    sessionProcesses: [
+      "F1_25.exe",
+      "F1 25.exe",
+      "F1_2025.exe"
+    ],
     profiles: [
       {
         id: "prof-f1-vr",
@@ -359,6 +370,11 @@ export const INITIAL_GAMES = [
     category: "racing",
     banner: "https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&w=800&q=80",
     description: "Next-generation driving simulation featuring dynamic physics and photorealistic visuals.",
+    sessionProcesses: [
+      "AssettoCorsaEVO.exe",
+      "ACE.exe",
+      "AssettoCorsaEvo-Win64-Shipping.exe"
+    ],
     profiles: [
       {
         id: "prof-ace-vr",
@@ -400,6 +416,11 @@ export const INITIAL_GAMES = [
     category: "racing",
     banner: "https://images.unsplash.com/photo-1542282088-72c9c27ed0cd?auto=format&fit=crop&w=800&q=80",
     description: "Premier driving simulation powered by Content Manager and Custom Shaders Patch.",
+    sessionProcesses: [
+      "acs.exe",
+      "acs_x86.exe",
+      "AssettoCorsa.exe"
+    ],
     profiles: [
       {
         id: "prof-ac-vr",
@@ -449,6 +470,11 @@ export const INITIAL_GAMES = [
     category: "racing",
     banner: "https://images.unsplash.com/photo-1541348263662-e068662d82af?auto=format&fit=crop&w=800&q=80",
     description: "Official game of the FIA World Endurance Championship & 24h Le Mans.",
+    sessionProcesses: [
+      "Le Mans Ultimate.exe",
+      "LMU.exe",
+      "LeMansUltimate.exe"
+    ],
     profiles: [
       {
         id: "prof-lmu-vr",
@@ -493,6 +519,10 @@ export const INITIAL_GAMES = [
     category: "flight",
     banner: "https://images.unsplash.com/photo-1519074069444-1ba4eff56022?auto=format&fit=crop&w=800&q=80",
     description: "Digital Combat Simulator: High fidelity combat aviation.",
+    sessionProcesses: [
+      "DCS.exe",
+      "DCS_updater.exe"
+    ],
     profiles: [
       {
         id: "prof-dcs-vr",
@@ -535,6 +565,11 @@ export const INITIAL_GAMES = [
     category: "flight",
     banner: "https://images.unsplash.com/photo-1508672019048-805479767384?auto=format&fit=crop&w=800&q=80",
     description: "Falcon Benchmark Sim: Premier F-16 combat simulation.",
+    sessionProcesses: [
+      "Falcon BMS.exe",
+      "Falcon.exe",
+      "Launcher.exe"
+    ],
     profiles: [
       {
         id: "prof-bms-vr",

@@ -297,9 +297,141 @@ function spawnProcessOrScript(targetPath, rawArgs = '') {
   }
 }
 
+// Helper function to check if any session process is running
+async function getRunningSessionProcess(sessionProcesses) {
+  if (!Array.isArray(sessionProcesses) || sessionProcesses.length === 0) return null;
+  try {
+    const { stdout } = await execPromise('tasklist /FO CSV /NH');
+    const lines = stdout.split(/\r?\n/);
+    const runningImages = new Set();
+    for (const line of lines) {
+      const match = line.match(/^"([^"]+)"/);
+      if (match) {
+        runningImages.add(match[1].toLowerCase());
+      }
+    }
+    for (const proc of sessionProcesses) {
+      const p = proc.toLowerCase().trim();
+      const pTrunc = p.slice(0, 25);
+      if (runningImages.has(p) || runningImages.has(pTrunc)) {
+        return proc;
+      }
+    }
+    return null;
+  } catch (e) {
+    return null;
+  }
+}
+
+// Helper function to check if a specific PID is running
+async function isPidRunning(pid) {
+  if (!pid) return false;
+  try {
+    const { stdout } = await execPromise(`tasklist /FI "PID eq ${pid}" /FO CSV /NH`);
+    return stdout.includes(pid.toString());
+  } catch (e) {
+    return false;
+  }
+}
+
+// Terminate companion apps marked with autoKill
+async function terminateAutoKillApps(autoKillApps) {
+  for (const app of autoKillApps) {
+    if (app.pid) {
+      try {
+        await execPromise(`taskkill /PID ${app.pid} /T /F`);
+      } catch (e) {}
+    }
+    if (app.exePath) {
+      const exeName = path.basename(app.exePath);
+      try {
+        await execPromise(`taskkill /IM "${exeName}" /T /F`);
+      } catch (e) {}
+    }
+  }
+}
+
+// Background Simulation Session Monitor
+function monitorSimulationSession(win, gamePid, gameExe, gameName, sessionProcesses, autoKillApps, stepIndex) {
+  if (!autoKillApps || autoKillApps.length === 0) return;
+
+  const sendStatus = (status, message, pid = null) => {
+    if (win && !win.isDestroyed()) {
+      win.webContents.send('launch:status', {
+        stepIndex,
+        status,
+        message,
+        pid,
+        name: 'Session Monitor & Auto-Close'
+      });
+    }
+  };
+
+  const monitoredDisplay = sessionProcesses && sessionProcesses.length > 0
+    ? sessionProcesses.slice(0, 2).join(', ')
+    : (gameExe ? path.basename(gameExe) : gameName);
+
+  sendStatus('running', `Session Monitor Active: Watching for ${gameName} session (${monitoredDisplay}). Auto-close armed for ${autoKillApps.length} companion app(s).`);
+
+  let sessionActive = false;
+  let activeProcessName = '';
+  let pollCount = 0;
+
+  const interval = setInterval(async () => {
+    pollCount++;
+    try {
+      // 1. Check if any simulation session process is running
+      const runningSessionExe = await getRunningSessionProcess(sessionProcesses);
+
+      if (runningSessionExe) {
+        if (!sessionActive) {
+          sessionActive = true;
+          activeProcessName = runningSessionExe;
+          sendStatus('running', `Simulation Session ACTIVE (${runningSessionExe} detected). Auto-close armed.`);
+        }
+        return;
+      }
+
+      // 2. If session process not detected, check if launcher is still running
+      const launcherRunning =
+        (gamePid && (await isPidRunning(gamePid))) ||
+        (gameExe && (await isProcessRunning(gameExe)));
+
+      if (launcherRunning) {
+        if (!sessionActive && pollCount % 4 === 0) {
+          sendStatus('running', `Monitoring: Launcher active. Waiting for in-game session to start...`);
+        }
+        return;
+      }
+
+      // 3. Neither session process nor launcher is running
+      if (sessionActive) {
+        clearInterval(interval);
+        sendStatus('running', `Simulation session exited (${activeProcessName || gameName}). Auto-closing helper apps...`);
+
+        await terminateAutoKillApps(autoKillApps);
+
+        sendStatus('completed', `Session ended. Auto-closed ${autoKillApps.length} companion app(s).`);
+      } else {
+        // Launcher exited without entering session (allow 10s grace period)
+        if (pollCount >= 4) {
+          clearInterval(interval);
+          sendStatus('running', `Simulation launcher closed. Auto-closing helper apps...`);
+
+          await terminateAutoKillApps(autoKillApps);
+
+          sendStatus('completed', `Auto-close complete.`);
+        }
+      }
+    } catch (err) {
+      console.error('Session monitor error:', err);
+    }
+  }, 2500);
+}
+
 // Launch Sequence IPC Handler
 ipcMain.handle('launch:runProfile', async (event, payload) => {
-  const { profileName, gameName, gameExe, gameArgs, companionApps } = payload;
+  const { profileName, gameName, gameExe, gameArgs, sessionProcesses, companionApps } = payload;
   const spawnedPids = [];
 
   const sendStatus = (stepIndex, status, message, pid = null) => {
@@ -363,10 +495,35 @@ ipcMain.handle('launch:runProfile', async (event, payload) => {
       }
     }
 
+    const autoKillApps = companionApps
+      .filter((app) => app.autoKill && app.exePath)
+      .map((app) => {
+        const spawned = spawnedPids.find((p) => p.appName === app.name);
+        return {
+          name: app.name,
+          exePath: app.exePath,
+          pid: spawned ? spawned.pid : null
+        };
+      });
+
     if (!gameExe) {
       if (companionApps.length > 0) {
         sendStatus(companionApps.length, 'completed', `Background app and optimization script sequence finished.`);
       }
+
+      if (autoKillApps.length > 0 && sessionProcesses && sessionProcesses.length > 0) {
+        const monitorStepIndex = companionApps.length + 1;
+        monitorSimulationSession(
+          mainWindow,
+          null,
+          null,
+          gameName,
+          sessionProcesses,
+          autoKillApps,
+          monitorStepIndex
+        );
+      }
+
       return { success: true, message: 'Companion apps & scripts processed' };
     }
 
@@ -380,6 +537,18 @@ ipcMain.handle('launch:runProfile', async (event, payload) => {
     const gameAlreadyRunning = await isProcessRunning(gameExe);
     if (gameAlreadyRunning) {
       sendStatus(gameStepIndex, 'already_running', `${gameName} is already running on your PC.`);
+      if (autoKillApps.length > 0) {
+        const monitorStepIndex = gameStepIndex + 1;
+        monitorSimulationSession(
+          mainWindow,
+          null,
+          gameExe,
+          gameName,
+          sessionProcesses,
+          autoKillApps,
+          monitorStepIndex
+        );
+      }
       return { success: true, message: 'Game already running' };
     }
 
@@ -395,9 +564,17 @@ ipcMain.handle('launch:runProfile', async (event, payload) => {
       gameProc.unref();
       sendStatus(gameStepIndex, 'completed', `Started ${gameName} successfully! (PID: ${gameProc.pid})`, gameProc.pid);
 
-      const autoKillApps = spawnedPids.filter((p) => p.autoKill);
       if (autoKillApps.length > 0) {
-        monitorGameProcess(gameProc.pid, gameExe, autoKillApps);
+        const monitorStepIndex = gameStepIndex + 1;
+        monitorSimulationSession(
+          mainWindow,
+          gameProc.pid,
+          gameExe,
+          gameName,
+          sessionProcesses,
+          autoKillApps,
+          monitorStepIndex
+        );
       }
 
       return { success: true, gamePid: gameProc.pid };
@@ -410,23 +587,3 @@ ipcMain.handle('launch:runProfile', async (event, payload) => {
     return { success: false, error: globalErr.message };
   }
 });
-
-function monitorGameProcess(gamePid, gameExePath, autoKillApps) {
-  const exeName = path.basename(gameExePath);
-  const checkInterval = setInterval(() => {
-    exec(`tasklist /FI "PID eq ${gamePid}"`, (err, stdout) => {
-      if (err || !stdout.includes(gamePid.toString())) {
-        clearInterval(checkInterval);
-        console.log(`Game ${exeName} (PID ${gamePid}) exited. Auto-killing helper apps...`);
-
-        autoKillApps.forEach(({ pid, appName }) => {
-          exec(`taskkill /PID ${pid} /F`, (killErr) => {
-            if (!killErr) {
-              console.log(`Auto-killed ${appName} (PID ${pid})`);
-            }
-          });
-        });
-      }
-    });
-  }, 5000);
-}

@@ -11,6 +11,9 @@ export default function GameModal({ game, category, onSave, onClose }) {
         ? 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=800&q=80'
         : 'https://images.unsplash.com/photo-1519074069444-1ba4eff56022?auto=format&fit=crop&w=800&q=80')
   );
+  const [sessionProcessesStr, setSessionProcessesStr] = useState(
+    (game?.sessionProcesses || []).join(', ')
+  );
 
   const handleBrowseImage = async () => {
     const selected = await selectImage();
@@ -24,12 +27,18 @@ export default function GameModal({ game, category, onSave, onClose }) {
       return;
     }
 
+    const sessionProcesses = sessionProcessesStr
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
     onSave({
       id: game?.id || `game-${Date.now()}`,
       name,
       category: game?.category || category,
       description,
       banner,
+      sessionProcesses,
       profiles: game?.profiles || []
     });
     onClose();
@@ -68,6 +77,21 @@ export default function GameModal({ game, category, onSave, onClose }) {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Monitored Simulation Processes (Auto-Close Tracker)</label>
+              <input
+                type="text"
+                className="form-input"
+                style={{ fontFamily: 'var(--font-mono)' }}
+                placeholder="e.g. iRacingSim64DX11.exe, acs.exe, DCS.exe"
+                value={sessionProcessesStr}
+                onChange={(e) => setSessionProcessesStr(e.target.value)}
+              />
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
+                Comma-separated executable names of the real simulation session (e.g. iRacing sim, Assetto Corsa acs.exe). When this process terminates, all auto-kill companion apps will close automatically.
+              </span>
             </div>
 
             <div className="form-group">

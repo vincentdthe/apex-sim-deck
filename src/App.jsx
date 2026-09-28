@@ -37,7 +37,7 @@ export default function App() {
   // Subscribe to native launch status updates from Tauri/Electron backend
   useEffect(() => {
     const unsubscribe = onLaunchStatus((data) => {
-      const { stepIndex, status, message, pid } = data;
+      const { stepIndex, status, message, pid, name } = data;
       setLaunchStatusSteps((prevSteps) => {
         const updated = [...prevSteps];
         if (updated[stepIndex]) {
@@ -45,7 +45,15 @@ export default function App() {
             ...updated[stepIndex],
             status,
             message,
-            pid: pid || updated[stepIndex].pid
+            pid: pid || updated[stepIndex].pid,
+            name: name || updated[stepIndex].name
+          };
+        } else {
+          updated[stepIndex] = {
+            name: name || 'Session Monitor & Auto-Close',
+            status,
+            message,
+            pid: pid || null
           };
         }
         return updated;
@@ -166,10 +174,12 @@ export default function App() {
       })
       .filter(Boolean);
 
+    const autoKillCount = companionAppsToRun.filter((a) => a.autoKill).length;
+
     const initialSteps = companionAppsToRun.map((app) => ({
       name: app.name,
       status: 'pending',
-      message: `Queued (Delay: ${app.delay}s)`
+      message: `Queued (Delay: ${app.delay}s)${app.autoKill ? ' [Auto-Close on exit]' : ''}`
     }));
 
     if (autoLaunchGame) {
@@ -177,6 +187,14 @@ export default function App() {
         name: `Main Game Executable (${game.name})`,
         status: 'pending',
         message: `Queued (${profile.args || 'Default flags'})`
+      });
+    }
+
+    if (autoKillCount > 0) {
+      initialSteps.push({
+        name: 'Session Monitor & Auto-Close',
+        status: 'pending',
+        message: `ARMED: Watching for ${game.name} session to auto-close ${autoKillCount} companion app(s) on exit`
       });
     }
 
@@ -193,6 +211,7 @@ export default function App() {
       gameName: game.name,
       gameExe: autoLaunchGame ? profile.exePath : null,
       gameArgs: profile.args,
+      sessionProcesses: game.sessionProcesses || [],
       companionApps: companionAppsToRun
     };
 
@@ -218,6 +237,13 @@ export default function App() {
         await new Promise((r) => setTimeout(r, 1000));
         setLaunchStatusSteps((prev) =>
           prev.map((s, idx) => (idx === gameIdx ? { ...s, status: 'completed', message: `Simulated launch of ${game.name}! [OK]` } : s))
+        );
+      }
+
+      if (autoKillCount > 0) {
+        const monitorIdx = autoLaunchGame ? companionAppsToRun.length + 1 : companionAppsToRun.length;
+        setLaunchStatusSteps((prev) =>
+          prev.map((s, idx) => (idx === monitorIdx ? { ...s, status: 'running', message: `Session Monitor active for ${game.name} [SIM ARMED]` } : s))
         );
       }
     }

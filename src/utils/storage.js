@@ -1,7 +1,7 @@
 import { INITIAL_APPS, INITIAL_GAMES } from '../data/initialData';
 
-const PRIMARY_APPS_KEY = 'apex_sim_deck_apps_v9';
-const PRIMARY_GAMES_KEY = 'apex_sim_deck_games_v9';
+const PRIMARY_APPS_KEY = 'apex_sim_deck_apps_v10';
+const PRIMARY_GAMES_KEY = 'apex_sim_deck_games_v10';
 
 function isOutdated(apps) {
   if (!Array.isArray(apps) || apps.length === 0) return true;
@@ -43,7 +43,8 @@ export function loadGames() {
       const parsed = JSON.parse(raw);
       const iracing = parsed.find(g => g.id === 'game-iracing');
       const iracingHasTiny = iracing?.profiles?.some(p => p.enabledAppIds?.includes('app-tinypedal'));
-      if (Array.isArray(parsed) && parsed.length > 0 && parsed.some(g => g.id === 'game-f1-25') && !iracingHasTiny) {
+      const hasSessionProcesses = parsed.some(g => Array.isArray(g.sessionProcesses) && g.sessionProcesses.length > 0);
+      if (Array.isArray(parsed) && parsed.length > 0 && parsed.some(g => g.id === 'game-f1-25') && !iracingHasTiny && hasSessionProcesses) {
         return parsed;
       }
     }
