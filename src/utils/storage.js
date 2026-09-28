@@ -1,25 +1,48 @@
 import { INITIAL_APPS, INITIAL_GAMES } from '../data/initialData';
 
-const PRIMARY_APPS_KEY = 'apex_sim_deck_apps_v10';
-const PRIMARY_GAMES_KEY = 'apex_sim_deck_games_v10';
+const APPS_KEYS = [
+  'apex_sim_deck_apps_v10',
+  'apex_sim_deck_apps_v9',
+  'apex_sim_deck_apps_v8',
+  'apex_sim_deck_apps_v7',
+  'apex_sim_deck_apps_v6',
+  'apex_sim_deck_apps_v5',
+  'apex_sim_deck_apps'
+];
 
-function isOutdated(apps) {
-  if (!Array.isArray(apps) || apps.length === 0) return true;
-  const hasTinyPedal = apps.some(a => a.id === 'app-tinypedal');
-  const hasOutdatedPaths = apps.some(a => a.exePath && a.exePath.includes('SimTools'));
-  return !hasTinyPedal || hasOutdatedPaths;
-}
+const GAMES_KEYS = [
+  'apex_sim_deck_games_v10',
+  'apex_sim_deck_games_v9',
+  'apex_sim_deck_games_v8',
+  'apex_sim_deck_games_v7',
+  'apex_sim_deck_games_v6',
+  'apex_sim_deck_games_v5',
+  'apex_sim_deck_games'
+];
+
+const PRIMARY_APPS_KEY = APPS_KEYS[0];
+const PRIMARY_GAMES_KEY = GAMES_KEYS[0];
 
 export function loadApps() {
   try {
-    const raw = localStorage.getItem(PRIMARY_APPS_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0 && !isOutdated(parsed)) {
-        return parsed;
+    // 1. Check all keys from newest to oldest for existing user configurations
+    for (const key of APPS_KEYS) {
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            // Found existing user data - always preserve it and update primary key
+            localStorage.setItem(PRIMARY_APPS_KEY, JSON.stringify(parsed));
+            return parsed;
+          }
+        } catch (e) {
+          console.warn(`Failed to parse apps from key ${key}`, e);
+        }
       }
     }
 
+    // 2. Only if no saved user data exists anywhere, initialize with defaults
     localStorage.setItem(PRIMARY_APPS_KEY, JSON.stringify(INITIAL_APPS));
     return INITIAL_APPS;
   } catch (e) {
@@ -30,7 +53,9 @@ export function loadApps() {
 
 export function saveApps(apps) {
   try {
-    localStorage.setItem(PRIMARY_APPS_KEY, JSON.stringify(apps));
+    if (Array.isArray(apps)) {
+      localStorage.setItem(PRIMARY_APPS_KEY, JSON.stringify(apps));
+    }
   } catch (e) {
     console.error('Failed to save apps to storage:', e);
   }
@@ -38,17 +63,34 @@ export function saveApps(apps) {
 
 export function loadGames() {
   try {
-    const raw = localStorage.getItem(PRIMARY_GAMES_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      const iracing = parsed.find(g => g.id === 'game-iracing');
-      const iracingHasTiny = iracing?.profiles?.some(p => p.enabledAppIds?.includes('app-tinypedal'));
-      const hasSessionProcesses = parsed.some(g => Array.isArray(g.sessionProcesses) && g.sessionProcesses.length > 0);
-      if (Array.isArray(parsed) && parsed.length > 0 && parsed.some(g => g.id === 'game-f1-25') && !iracingHasTiny && hasSessionProcesses) {
-        return parsed;
+    // 1. Check all keys from newest to oldest for existing user configurations
+    for (const key of GAMES_KEYS) {
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            // Ensure sessionProcesses property exists on games without mutating any user settings
+            const enriched = parsed.map((game) => {
+              const defaultGame = INITIAL_GAMES.find((ig) => ig.id === game.id);
+              return {
+                ...game,
+                sessionProcesses: Array.isArray(game.sessionProcesses)
+                  ? game.sessionProcesses
+                  : defaultGame?.sessionProcesses || []
+              };
+            });
+
+            localStorage.setItem(PRIMARY_GAMES_KEY, JSON.stringify(enriched));
+            return enriched;
+          }
+        } catch (e) {
+          console.warn(`Failed to parse games from key ${key}`, e);
+        }
       }
     }
 
+    // 2. Only if no saved user data exists anywhere, initialize with defaults
     localStorage.setItem(PRIMARY_GAMES_KEY, JSON.stringify(INITIAL_GAMES));
     return INITIAL_GAMES;
   } catch (e) {
@@ -59,17 +101,19 @@ export function loadGames() {
 
 export function saveGames(games) {
   try {
-    localStorage.setItem(PRIMARY_GAMES_KEY, JSON.stringify(games));
+    if (Array.isArray(games)) {
+      localStorage.setItem(PRIMARY_GAMES_KEY, JSON.stringify(games));
+    }
   } catch (e) {
     console.error('Failed to save games to storage:', e);
   }
 }
 
 export function exportConfig(apps, games) {
-  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ apps, games }, null, 2));
+  const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify({ apps, games }, null, 2));
   const downloadAnchor = document.createElement('a');
-  downloadAnchor.setAttribute("href", dataStr);
-  downloadAnchor.setAttribute("download", `apex_sim_deck_backup_${new Date().toISOString().slice(0, 10)}.json`);
+  downloadAnchor.setAttribute('href', dataStr);
+  downloadAnchor.setAttribute('download', `apex_sim_deck_backup_${new Date().toISOString().slice(0, 10)}.json`);
   document.body.appendChild(downloadAnchor);
   downloadAnchor.click();
   downloadAnchor.remove();
