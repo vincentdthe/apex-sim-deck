@@ -224,8 +224,7 @@ ipcMain.handle('dialog:selectImage', async () => {
     ]
   });
   if (result.canceled || result.filePaths.length === 0) return null;
-  const filePath = result.filePaths[0];
-  return `file:///${filePath.replace(/\\/g, '/')}`;
+  return result.filePaths[0];
 });
 
 // Check if a process is already running on Windows (Exact process name match)

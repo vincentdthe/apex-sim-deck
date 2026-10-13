@@ -18,6 +18,11 @@
         "open": true,
         "save": true
       },
+      "protocol": {
+        "all": true,
+        "asset": true,
+        "assetScope": ["**"]
+      },
       "shell": {
         "all": true,
         "open": true,

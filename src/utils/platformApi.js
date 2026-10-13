@@ -52,6 +52,46 @@ export async function selectExe() {
   return manual || null;
 }
 
+import { convertFileSrc } from '@tauri-apps/api/tauri';
+
+export function getImageUrl(source) {
+  if (!source || typeof source !== 'string') return '';
+  const trimmed = source.trim();
+  if (!trimmed) return '';
+
+  // Remote URLs or data URIs
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('data:')) {
+    return trimmed;
+  }
+
+  // Strip accidental protocol prefixes that might have been saved in the past
+  let localPath = trimmed;
+  if (localPath.startsWith('asset://')) {
+    localPath = localPath.replace(/^asset:\/\/+/, '');
+  }
+  if (localPath.startsWith('file:///')) {
+    localPath = localPath.replace(/^file:\/\/\//, '');
+  }
+
+  const currentPlatform = getPlatform();
+
+  if (currentPlatform === 'tauri') {
+    try {
+      return convertFileSrc(localPath);
+    } catch (e) {
+      const normalized = localPath.replace(/\\/g, '/');
+      return `https://asset.localhost/${encodeURI(normalized)}`;
+    }
+  }
+
+  if (currentPlatform === 'electron') {
+    const normalized = localPath.replace(/\\/g, '/');
+    return `file:///${normalized}`;
+  }
+
+  return localPath;
+}
+
 export async function selectImage() {
   const currentPlatform = getPlatform();
 
@@ -59,7 +99,7 @@ export async function selectImage() {
     try {
       const selected = await invokeTauri('select_image_dialog');
       if (selected) {
-        return `asset://${selected}`;
+        return selected.replace(/^asset:\/\/+/, '');
       }
     } catch (e) {
       console.warn('Tauri select_image_dialog invoke failed, falling back to dialog API:', e);
@@ -72,14 +112,15 @@ export async function selectImage() {
           ],
           multiple: false
         });
-        if (fallback) return `asset://${fallback}`;
+        if (fallback) return fallback.replace(/^asset:\/\/+/, '');
       }
     }
     return null;
   }
 
   if (currentPlatform === 'electron' && window.electronAPI?.selectImage) {
-    return await window.electronAPI.selectImage();
+    const res = await window.electronAPI.selectImage();
+    return res ? res.replace(/^file:\/\/\//, '') : null;
   }
 
   const manual = prompt('Enter banner image URL or local file path:');

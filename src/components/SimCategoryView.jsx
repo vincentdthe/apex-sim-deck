@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Play, Plus, Edit2, Trash2, Search, Glasses, Monitor, Layers, Settings2 } from 'lucide-react';
+import { getImageUrl } from '../utils/platformApi';
 
 export default function SimCategoryView({
   category, // 'racing' | 'flight'
@@ -109,9 +110,12 @@ export default function SimCategoryView({
             <div key={game.id} className="game-card">
               <div className="game-banner-container">
                 <img
-                  src={game.banner || (isRacing ? 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=800&q=80' : 'https://images.unsplash.com/photo-1519074069444-1ba4eff56022?auto=format&fit=crop&w=800&q=80')}
+                  src={getImageUrl(game.banner) || (isRacing ? 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=800&q=80' : 'https://images.unsplash.com/photo-1519074069444-1ba4eff56022?auto=format&fit=crop&w=800&q=80')}
                   alt={game.name}
                   className="game-banner-img"
+                  onError={(e) => {
+                    e.currentTarget.src = isRacing ? 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=800&q=80' : 'https://images.unsplash.com/photo-1519074069444-1ba4eff56022?auto=format&fit=crop&w=800&q=80';
+                  }}
                 />
                 <div className="game-banner-overlay" />
                 <div className="game-header-info">

@@ -1,23 +1,25 @@
 import React, { useState } from 'react';
 import { X, Check, Image as ImageIcon, FolderOpen } from 'lucide-react';
-import { selectImage } from '../utils/platformApi';
+import { selectImage, getImageUrl } from '../utils/platformApi';
 
 export default function GameModal({ game, category, onSave, onClose }) {
   const [name, setName] = useState(game?.name || '');
   const [description, setDescription] = useState(game?.description || '');
-  const [banner, setBanner] = useState(
-    game?.banner ||
-      (category === 'racing'
-        ? 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=800&q=80'
-        : 'https://images.unsplash.com/photo-1519074069444-1ba4eff56022?auto=format&fit=crop&w=800&q=80')
-  );
+  const defaultBanner = category === 'racing'
+    ? 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=800&q=80'
+    : 'https://images.unsplash.com/photo-1519074069444-1ba4eff56022?auto=format&fit=crop&w=800&q=80';
+  const rawBanner = game?.banner || defaultBanner;
+  const cleanedBanner = rawBanner.replace(/^asset:\/\/+/, '').replace(/^file:\/\/\//, '');
+  const [banner, setBanner] = useState(cleanedBanner);
   const [sessionProcessesStr, setSessionProcessesStr] = useState(
     (game?.sessionProcesses || []).join(', ')
   );
 
   const handleBrowseImage = async () => {
     const selected = await selectImage();
-    if (selected) setBanner(selected);
+    if (selected) {
+      setBanner(selected.replace(/^asset:\/\/+/, '').replace(/^file:\/\/\//, ''));
+    }
   };
 
   const handleSubmit = (e) => {
@@ -113,7 +115,14 @@ export default function GameModal({ game, category, onSave, onClose }) {
             {/* Banner Preview */}
             {banner && (
               <div style={{ borderRadius: 'var(--radius-md)', overflow: 'hidden', height: '110px', border: '1px solid var(--border-color)', position: 'relative' }}>
-                <img src={banner} alt="Banner Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img
+                  src={getImageUrl(banner)}
+                  alt="Banner Preview"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  onError={(e) => {
+                    e.currentTarget.style.opacity = '0.3';
+                  }}
+                />
                 <div style={{ position: 'absolute', bottom: '6px', right: '8px', background: 'rgba(0,0,0,0.7)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', color: '#fff' }}>
                   Preview
                 </div>
