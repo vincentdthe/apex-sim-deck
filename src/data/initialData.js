@@ -473,15 +473,16 @@ export const INITIAL_GAMES = [
     sessionProcesses: [
       "Le Mans Ultimate.exe",
       "LMU.exe",
-      "LeMansUltimate.exe"
+      "LeMansUltimate.exe",
+      "start_protected_game.exe"
     ],
     profiles: [
       {
         id: "prof-lmu-vr",
-        name: "LMU VR Mode",
+        name: "LMU VR Mode (OpenXR)",
         isVr: true,
-        exePath: "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Le Mans Ultimate\\Le Mans Ultimate.exe",
-        args: "-vr",
+        exePath: "2399420",
+        args: "+XR",
         autoLaunchGame: true,
         enabledAppIds: [
           "app-fanatec",
