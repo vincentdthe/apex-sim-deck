@@ -528,6 +528,71 @@ ipcMain.handle('launch:runProfile', async (event, payload) => {
 
     const gameStepIndex = companionApps.length;
 
+    // Helper: detect if target is Steam
+    const isSteamTarget = (target) => {
+      if (!target) return false;
+      const t = target.trim();
+      return t.toLowerCase().startsWith('steam://') || /^\d+$/.test(t);
+    };
+
+    const formatSteamUri = (target, rawArgs = '') => {
+      let appId = '';
+      let extraArgs = rawArgs ? rawArgs.trim() : '';
+
+      const t = target.trim();
+      if (/^\d+$/.test(t)) {
+        appId = t;
+      } else if (t.toLowerCase().startsWith('steam://')) {
+        // e.g. steam://run/1066890, steam://rungameid/1066890, steam://rungameid/1066890//-vr
+        const match = t.match(/steam:\/\/(?:run|rungameid)\/(\d+)(?:\/\/(.*))?/i);
+        if (match) {
+          appId = match[1];
+          if (match[2] && !extraArgs) {
+            extraArgs = match[2];
+          }
+        } else {
+          return t;
+        }
+      }
+
+      if (appId) {
+        if (extraArgs) {
+          return `steam://run/${appId}//${encodeURI(extraArgs)}`;
+        }
+        return `steam://run/${appId}`;
+      }
+      return target;
+    };
+
+    if (isSteamTarget(gameExe)) {
+      const steamUri = formatSteamUri(gameExe, gameArgs);
+      sendStatus(gameStepIndex, 'running', `Launching Steam game: ${gameName} (${steamUri})...`);
+
+      try {
+        await shell.openExternal(steamUri);
+        sendStatus(gameStepIndex, 'completed', `Steam launch command issued for ${gameName} [OK]`);
+
+        if (autoKillApps.length > 0) {
+          const monitorStepIndex = gameStepIndex + 1;
+          monitorSimulationSession(
+            mainWindow,
+            null,
+            null,
+            gameName,
+            sessionProcesses,
+            autoKillApps,
+            monitorStepIndex
+          );
+        }
+
+        return { success: true, steam: true };
+      } catch (steamErr) {
+        console.error(`Steam launch error for ${gameName}:`, steamErr);
+        sendStatus(gameStepIndex, 'error', `Failed to trigger Steam URL: ${steamErr.message}`);
+        return { success: false, error: steamErr.message };
+      }
+    }
+
     if (!fs.existsSync(gameExe)) {
       sendStatus(gameStepIndex, 'error', `Game executable not found on disk: "${gameExe}". Please check path.`);
       return { success: false, error: 'Game executable not found on disk' };

@@ -120,13 +120,13 @@ export default function ProfileModal({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Game Executable / Script Path (.exe, .ps1, .bat)</label>
+              <label className="form-label">Game Executable, Steam App ID, or Script (.exe, steam://, .bat, .ps1)</label>
               <div className="input-with-button">
                 <input
                   type="text"
                   className="form-input"
                   style={{ fontFamily: 'var(--font-mono)' }}
-                  placeholder="C:\Program Files\SimGame\Game.exe"
+                  placeholder="e.g. 1066890, steam://rungameid/1066890, or C:\Games\Game.exe"
                   value={exePath}
                   onChange={(e) => setExePath(e.target.value)}
                 />
@@ -134,6 +134,9 @@ export default function ProfileModal({
                   <FolderOpen size={16} /> Browse
                 </button>
               </div>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '0.25rem', display: 'block' }}>
+                Tip: Enter the <strong>Steam App ID</strong> (e.g. <code>1066890</code> for Assetto Corsa Competizione, <code>244210</code> for Assetto Corsa) or a <code>steam://run/&lt;AppID&gt;</code> URL. Launch arguments below will be passed automatically.
+              </span>
             </div>
 
             <div className="form-group">

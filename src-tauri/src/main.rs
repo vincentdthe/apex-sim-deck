@@ -594,6 +594,91 @@ async fn launch_profile(window: Window, payload: LaunchPayload) -> Result<bool, 
         if !game_exe.trim().is_empty() {
             let game_step = apps.len();
 
+            let game_trimmed = game_exe.trim();
+            let is_steam = game_trimmed.to_lowercase().starts_with("steam://")
+                || game_trimmed.chars().all(|c| c.is_ascii_digit());
+
+            if is_steam {
+                let steam_uri = if game_trimmed.chars().all(|c| c.is_ascii_digit()) {
+                    if let Some(ref args) = payload.game_args {
+                        if !args.trim().is_empty() {
+                            format!("steam://run/{}//{}", game_trimmed, args.trim())
+                        } else {
+                            format!("steam://run/{}", game_trimmed)
+                        }
+                    } else {
+                        format!("steam://run/{}", game_trimmed)
+                    }
+                } else if let Some(ref args) = payload.game_args {
+                    if !args.trim().is_empty() && !game_trimmed.contains("//") {
+                        format!("{}//{}", game_trimmed, args.trim())
+                    } else {
+                        game_trimmed.to_string()
+                    }
+                } else {
+                    game_trimmed.to_string()
+                };
+
+                let _ = window.emit(
+                    "launch:status",
+                    StatusUpdate {
+                        step_index: game_step,
+                        status: "running".into(),
+                        message: format!("Launching Steam game: {} ({})...", payload.game_name, steam_uri),
+                        pid: None,
+                        name: Some(payload.game_name.clone()),
+                    },
+                );
+
+                match open::that(&steam_uri) {
+                    Ok(_) => {
+                        let _ = window.emit(
+                            "launch:status",
+                            StatusUpdate {
+                                step_index: game_step,
+                                status: "completed".into(),
+                                message: format!("Steam launch command issued for {} [OK]", payload.game_name),
+                                pid: None,
+                                name: Some(payload.game_name.clone()),
+                            },
+                        );
+
+                        if !auto_kill_targets.is_empty() {
+                            let win_clone = window.clone();
+                            let session_procs = payload.session_processes.clone();
+                            let game_name = payload.game_name.clone();
+                            let monitor_step = game_step + 1;
+                            tokio::spawn(async move {
+                                monitor_simulation_session(
+                                    win_clone,
+                                    None,
+                                    None,
+                                    game_name,
+                                    session_procs,
+                                    auto_kill_targets,
+                                    monitor_step,
+                                )
+                                .await;
+                            });
+                        }
+                        return Ok(true);
+                    }
+                    Err(e) => {
+                        let _ = window.emit(
+                            "launch:status",
+                            StatusUpdate {
+                                step_index: game_step,
+                                status: "error".into(),
+                                message: format!("Failed to trigger Steam: {}", e),
+                                pid: None,
+                                name: Some(payload.game_name.clone()),
+                            },
+                        );
+                        return Ok(true);
+                    }
+                }
+            }
+
             if !Path::new(&game_exe).exists() {
                 let _ = window.emit(
                     "launch:status",
